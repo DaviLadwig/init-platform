@@ -1,0 +1,11 @@
+Options -Indexes
+
+RewriteEngine On
+
+# Se o arquivo ou diretório existir fisicamente,
+# o Apache permite o acesso normalmente.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Todas as demais requisições passam pelo index.php.
+RewriteRule ^ index.php [QSA,L]

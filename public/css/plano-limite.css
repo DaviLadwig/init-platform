@@ -1,0 +1,175 @@
+/* ============================================================
+   PLANO - LIMITES
+============================================================ */
+
+.limit-plan-context {
+    display: flex;
+    align-items: stretch;
+    margin-bottom: 22px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.006);
+}
+
+.limit-plan-main,
+.limit-plan-product {
+    padding: 17px 20px;
+}
+
+.limit-plan-main {
+    flex: 1;
+}
+
+.limit-plan-product {
+    min-width: 240px;
+    border-left: 1px solid var(--color-border-soft);
+}
+
+.limit-plan-label,
+.limit-plan-product>span {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--color-text-secondary);
+    font-size: 10px;
+    font-weight: 400;
+}
+
+.limit-plan-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.limit-plan-title strong,
+.limit-plan-product strong {
+    color: var(--color-text);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.limit-plan-title span,
+.limit-plan-product small {
+    color: #71849b;
+    font-family:
+        "SFMono-Regular",
+        Consolas,
+        "Liberation Mono",
+        monospace;
+    font-size: 9px;
+    font-weight: 400;
+}
+
+.limit-plan-product small {
+    display: block;
+    margin-top: 5px;
+}
+
+
+/* ============================================================
+   EMPTY STATE
+============================================================ */
+
+.limits-empty {
+    padding: 42px 24px;
+}
+
+.limits-empty strong {
+    display: block;
+    color: var(--color-text);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.limits-empty p {
+    max-width: 540px;
+    margin: 7px 0 0;
+    color: var(--color-text-secondary);
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.6;
+}
+
+
+/* ============================================================
+   TABLE
+============================================================ */
+
+.limit-key {
+    color: #9eb5cf;
+    font-family:
+        "SFMono-Regular",
+        Consolas,
+        "Liberation Mono",
+        monospace;
+    font-size: 10px;
+    font-weight: 400;
+}
+
+.limit-value {
+    color: var(--color-text);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* ============================================================
+   FORM CONTEXT
+============================================================ */
+
+.limit-form-context {
+    margin-bottom: 22px;
+    padding: 16px 18px;
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+
+    background: rgba(255, 255, 255, 0.006);
+}
+
+.limit-form-context>span {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: var(--color-text-secondary);
+
+    font-size: 10px;
+    font-weight: 400;
+}
+
+.limit-form-context strong {
+    color: var(--color-text);
+
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.limit-form-context small {
+    margin-left: 8px;
+
+    color: #71849b;
+
+    font-family:
+        "SFMono-Regular",
+        Consolas,
+        "Liberation Mono",
+        monospace;
+
+    font-size: 9px;
+    font-weight: 400;
+}
+
+/* ============================================================
+   RESPONSIVE
+============================================================ */
+
+@media (max-width: 700px) {
+    .limit-plan-context {
+        flex-direction: column;
+    }
+
+    .limit-plan-product {
+        min-width: 0;
+        border-top: 1px solid var(--color-border-soft);
+        border-left: 0;
+    }
+}

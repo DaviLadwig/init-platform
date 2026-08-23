@@ -1,0 +1,15 @@
+{
+    "name": "init/saas-platform",
+    "description": "Plataforma central de gerenciamento dos produtos SaaS da Init Sistemas.",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.2",
+        "vlucas/phpdotenv": "^5.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    }
+}

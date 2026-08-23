@@ -1,0 +1,267 @@
+/* ============================================================
+   PLANOS
+============================================================ */
+
+.plans-overview {
+    display: flex;
+    align-items: stretch;
+    margin-bottom: 22px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.006);
+}
+
+.plans-overview>div {
+    min-width: 190px;
+    padding: 15px 20px;
+    border-right: 1px solid var(--color-border-soft);
+}
+
+.plans-overview>div:last-child {
+    border-right: 0;
+}
+
+.plans-overview span {
+    display: block;
+    color: var(--color-text-secondary);
+    font-size: 10px;
+    font-weight: 400;
+}
+
+.plans-overview strong {
+    display: block;
+    margin-top: 5px;
+    color: var(--color-text);
+    font-size: 19px;
+    font-weight: 600;
+}
+
+
+/* ============================================================
+   CATÁLOGO
+============================================================ */
+
+.plans-catalog {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.plans-product {
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.006);
+}
+
+.plans-product-header {
+    min-height: 94px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 20px 22px;
+    border-bottom: 1px solid var(--color-border-soft);
+}
+
+.plans-product-identity {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.plans-product-mark {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(77, 135, 247, 0.2);
+    border-radius: 5px;
+    background: rgba(77, 135, 247, 0.08);
+    color: #75a6ff;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.plans-product-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.plans-product-title h2 {
+    margin: 0;
+    color: var(--color-text);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.plans-product-title span {
+    color: #6f829a;
+    font-family:
+        "SFMono-Regular",
+        Consolas,
+        "Liberation Mono",
+        monospace;
+    font-size: 9px;
+    font-weight: 400;
+}
+
+.plans-product-identity p {
+    max-width: 620px;
+    margin: 6px 0 0;
+    color: var(--color-text-secondary);
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.55;
+}
+
+.plans-product-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.plans-count {
+    color: #8799af;
+    font-size: 11px;
+    font-weight: 400;
+}
+
+
+/* ============================================================
+   EMPTY
+============================================================ */
+
+.plans-empty {
+    padding: 28px 22px;
+}
+
+.plans-empty strong {
+    display: block;
+    color: #bcc9d8;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.plans-empty span {
+    display: block;
+    margin-top: 5px;
+    color: #708096;
+    font-size: 11px;
+    font-weight: 400;
+}
+
+
+/* ============================================================
+   PLAN ROW
+============================================================ */
+
+.plan-name {
+    display: flex;
+    flex-direction: column;
+}
+
+.plan-name strong {
+    color: var(--color-text);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.plan-name span {
+    margin-top: 4px;
+    color: #71849b;
+    font-family:
+        "SFMono-Regular",
+        Consolas,
+        "Liberation Mono",
+        monospace;
+    font-size: 9px;
+    font-weight: 400;
+}
+
+.plan-value {
+    color: #e9f1fb;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* ============================================================
+   REFERÊNCIA DO PRODUTO
+============================================================ */
+
+.plan-product-reference {
+    margin-bottom: 22px;
+    padding: 15px 16px;
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+
+    background: rgba(255, 255, 255, 0.012);
+}
+
+.plan-product-reference span {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: var(--color-text-secondary);
+
+    font-size: 10px;
+    font-weight: 400;
+}
+
+.plan-product-reference strong {
+    color: var(--color-text);
+
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.plan-product-reference small {
+    margin-left: 8px;
+
+    color: #71849b;
+
+    font-family:
+        "SFMono-Regular",
+        Consolas,
+        "Liberation Mono",
+        monospace;
+
+    font-size: 9px;
+    font-weight: 400;
+}
+
+
+/* ============================================================
+   RESPONSIVE
+============================================================ */
+
+@media (max-width: 760px) {
+    .plans-product-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .plans-product-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .plans-overview {
+        flex-direction: column;
+    }
+
+    .plans-overview>div {
+        border-right: 0;
+        border-bottom: 1px solid var(--color-border-soft);
+    }
+
+    .plans-overview>div:last-child {
+        border-bottom: 0;
+    }
+}
