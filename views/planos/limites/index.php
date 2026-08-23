@@ -4,56 +4,52 @@ declare(strict_types=1);
 
 $viewPlano = isset($plano)
     && is_array($plano)
-    ? $plano
-    : [];
+        ? $plano
+        : [];
 
 $viewLimites = isset($limites)
     && is_array($limites)
-    ? $limites
-    : [];
+        ? $limites
+        : [];
 
 $viewAppUrl = isset($appUrl)
     && is_string($appUrl)
-    ? rtrim($appUrl, '/')
-    : '';
+        ? rtrim($appUrl, '/')
+        : '';
+
+$viewSuccess = isset($success)
+    && is_string($success)
+        ? $success
+        : null;
+
+$viewError = isset($error)
+    && is_string($error)
+        ? $error
+        : null;
 
 $planoId = isset($viewPlano['id'])
     ? (int) $viewPlano['id']
     : 0;
 
-$planoNome =
-    isset($viewPlano['nome'])
+$planoNome = isset($viewPlano['nome'])
     && is_string($viewPlano['nome'])
-    ? $viewPlano['nome']
-    : '';
+        ? $viewPlano['nome']
+        : '';
 
-$planoCodigo =
-    isset($viewPlano['codigo'])
+$planoCodigo = isset($viewPlano['codigo'])
     && is_string($viewPlano['codigo'])
-    ? $viewPlano['codigo']
-    : '';
+        ? $viewPlano['codigo']
+        : '';
 
-$produtoNome =
-    isset($viewPlano['produto_nome'])
+$produtoNome = isset($viewPlano['produto_nome'])
     && is_string($viewPlano['produto_nome'])
-    ? $viewPlano['produto_nome']
-    : '';
+        ? $viewPlano['produto_nome']
+        : '';
 
-$produtoCodigo =
-    isset($viewPlano['produto_codigo'])
+$produtoCodigo = isset($viewPlano['produto_codigo'])
     && is_string($viewPlano['produto_codigo'])
-    ? $viewPlano['produto_codigo']
-    : '';
-
-$viewSuccess = isset($success)
-    && is_string($success)
-    ? $success
-    : null;
-
-$viewError = isset($error)
-    && is_string($error)
-    ? $error
-    : null;
+        ? $viewPlano['produto_codigo']
+        : '';
 
 ?>
 
@@ -77,15 +73,54 @@ $viewError = isset($error)
 
     <a
         href="<?= htmlspecialchars(
-                    $viewAppUrl . '/planos',
-                    ENT_QUOTES,
-                    'UTF-8'
-                ) ?>"
-        class="button-secondary">
+            $viewAppUrl . '/planos',
+            ENT_QUOTES,
+            'UTF-8'
+        ) ?>"
+        class="button-secondary"
+    >
         Voltar aos planos
     </a>
 
 </section>
+
+
+<?php if (
+    $viewSuccess !== null
+    && $viewSuccess !== ''
+): ?>
+
+    <div
+        class="form-alert form-alert-success page-alert"
+        role="status"
+    >
+        <?= htmlspecialchars(
+            $viewSuccess,
+            ENT_QUOTES,
+            'UTF-8'
+        ) ?>
+    </div>
+
+<?php endif; ?>
+
+
+<?php if (
+    $viewError !== null
+    && $viewError !== ''
+): ?>
+
+    <div
+        class="form-alert form-alert-error page-alert"
+        role="alert"
+    >
+        <?= htmlspecialchars(
+            $viewError,
+            ENT_QUOTES,
+            'UTF-8'
+        ) ?>
+    </div>
+
+<?php endif; ?>
 
 
 <section class="limit-plan-context">
@@ -159,8 +194,8 @@ $viewError = isset($error)
             <p>
                 <?= count($viewLimites) ?>
                 limite<?= count($viewLimites) === 1
-                            ? ''
-                            : 's' ?>
+                    ? ''
+                    : 's' ?>
                 neste plano
             </p>
 
@@ -168,14 +203,15 @@ $viewError = isset($error)
 
         <a
             href="<?= htmlspecialchars(
-                        $viewAppUrl
-                            . '/planos/'
-                            . $planoId
-                            . '/limites/novo',
-                        ENT_QUOTES,
-                        'UTF-8'
-                    ) ?>"
-            class="button-primary">
+                $viewAppUrl
+                . '/planos/'
+                . $planoId
+                . '/limites/novo',
+                ENT_QUOTES,
+                'UTF-8'
+            ) ?>"
+            class="button-primary"
+        >
             Novo limite
         </a>
 
@@ -221,31 +257,28 @@ $viewError = isset($error)
 
                         <?php
 
-                        $chave =
-                            isset($limite['chave'])
-                            && is_string($limite['chave'])
-                            ? $limite['chave']
-                            : '';
-
-                        $valor =
-                            isset($limite['valor'])
-                            && is_numeric($limite['valor'])
-                            ? (string) $limite['valor']
-                            : '0';
-
                         $limiteId = isset($limite['id'])
                             ? (int) $limite['id']
                             : 0;
 
-                        /*
-                        * Remove zeros decimais desnecessários
-                        * somente para apresentação.
-                        *
-                        * 10.0000 -> 10
-                        * 10.5000 -> 10.5
-                        * 10.2500 -> 10.25
-                        */
+                        $chave = isset($limite['chave'])
+                            && is_string($limite['chave'])
+                                ? $limite['chave']
+                                : '';
 
+                        $valor = isset($limite['valor'])
+                            && is_numeric($limite['valor'])
+                                ? (string) $limite['valor']
+                                : '0';
+
+                        /*
+                         * Remove apenas zeros decimais desnecessários
+                         * na apresentação:
+                         *
+                         * 10.0000 -> 10
+                         * 10.5000 -> 10.5
+                         * 10.2500 -> 10.25
+                         */
                         if (str_contains($valor, '.')) {
                             $valor = rtrim(
                                 rtrim(
@@ -260,11 +293,10 @@ $viewError = isset($error)
                             $valor = '0';
                         }
 
-                        $unidade =
-                            isset($limite['unidade'])
+                        $unidade = isset($limite['unidade'])
                             && is_string($limite['unidade'])
-                            ? $limite['unidade']
-                            : '';
+                                ? $limite['unidade']
+                                : '';
 
                         ?>
 
@@ -298,9 +330,7 @@ $viewError = isset($error)
 
                             <td>
 
-                                <?php if (
-                                    $unidade !== ''
-                                ): ?>
+                                <?php if ($unidade !== ''): ?>
 
                                     <span class="table-muted">
                                         <?= htmlspecialchars(
@@ -320,39 +350,46 @@ $viewError = isset($error)
 
                             </td>
 
-                            <div class="table-actions">
 
-                                <a
-                                    href="<?= htmlspecialchars(
-                                                $viewAppUrl
-                                                    . '/planos/'
-                                                    . $planoId
-                                                    . '/limites/'
-                                                    . $limiteId
-                                                    . '/editar',
-                                                ENT_QUOTES,
-                                                'UTF-8'
-                                            ) ?>"
-                                    class="table-action">
-                                    Editar
-                                </a>
+                            <td>
 
-                                <a
-                                    href="<?= htmlspecialchars(
-                                                $viewAppUrl
-                                                    . '/planos/'
-                                                    . $planoId
-                                                    . '/limites/'
-                                                    . $limiteId
-                                                    . '/remover',
-                                                ENT_QUOTES,
-                                                'UTF-8'
-                                            ) ?>"
-                                    class="table-action table-action-danger">
-                                    Remover
-                                </a>
+                                <div class="table-actions">
 
-                            </div>
+                                    <a
+                                        href="<?= htmlspecialchars(
+                                            $viewAppUrl
+                                            . '/planos/'
+                                            . $planoId
+                                            . '/limites/'
+                                            . $limiteId
+                                            . '/editar',
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        ) ?>"
+                                        class="table-action"
+                                    >
+                                        Editar
+                                    </a>
+
+                                    <a
+                                        href="<?= htmlspecialchars(
+                                            $viewAppUrl
+                                            . '/planos/'
+                                            . $planoId
+                                            . '/limites/'
+                                            . $limiteId
+                                            . '/remover',
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        ) ?>"
+                                        class="table-action table-action-danger"
+                                    >
+                                        Remover
+                                    </a>
+
+                                </div>
+
+                            </td>
 
                         </tr>
 
