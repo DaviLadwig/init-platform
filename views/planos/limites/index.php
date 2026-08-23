@@ -152,19 +152,6 @@ $viewError = isset($error)
 
         <div>
 
-            <a
-                href="<?= htmlspecialchars(
-                            $viewAppUrl
-                                . '/planos/'
-                                . $planoId
-                                . '/limites/novo',
-                            ENT_QUOTES,
-                            'UTF-8'
-                        ) ?>"
-                class="button-primary">
-                Novo limite
-            </a>
-
             <h2>
                 Limites configurados
             </h2>
@@ -178,6 +165,19 @@ $viewError = isset($error)
             </p>
 
         </div>
+
+        <a
+            href="<?= htmlspecialchars(
+                        $viewAppUrl
+                            . '/planos/'
+                            . $planoId
+                            . '/limites/novo',
+                        ENT_QUOTES,
+                        'UTF-8'
+                    ) ?>"
+            class="button-primary">
+            Novo limite
+        </a>
 
     </header>
 
@@ -208,6 +208,7 @@ $viewError = isset($error)
                         <th>Limite</th>
                         <th>Valor</th>
                         <th>Unidade</th>
+                        <th>Ações</th>
                     </tr>
 
                 </thead>
@@ -232,6 +233,10 @@ $viewError = isset($error)
                             ? (string) $limite['valor']
                             : '0';
 
+                        $limiteId = isset($limite['id'])
+                            ? (int) $limite['id']
+                            : 0;
+
                         /*
                         * Remove zeros decimais desnecessários
                         * somente para apresentação.
@@ -240,6 +245,7 @@ $viewError = isset($error)
                         * 10.5000 -> 10.5
                         * 10.2500 -> 10.25
                         */
+
                         if (str_contains($valor, '.')) {
                             $valor = rtrim(
                                 rtrim(
@@ -313,6 +319,40 @@ $viewError = isset($error)
                                 <?php endif; ?>
 
                             </td>
+
+                            <div class="table-actions">
+
+                                <a
+                                    href="<?= htmlspecialchars(
+                                                $viewAppUrl
+                                                    . '/planos/'
+                                                    . $planoId
+                                                    . '/limites/'
+                                                    . $limiteId
+                                                    . '/editar',
+                                                ENT_QUOTES,
+                                                'UTF-8'
+                                            ) ?>"
+                                    class="table-action">
+                                    Editar
+                                </a>
+
+                                <a
+                                    href="<?= htmlspecialchars(
+                                                $viewAppUrl
+                                                    . '/planos/'
+                                                    . $planoId
+                                                    . '/limites/'
+                                                    . $limiteId
+                                                    . '/remover',
+                                                ENT_QUOTES,
+                                                'UTF-8'
+                                            ) ?>"
+                                    class="table-action table-action-danger">
+                                    Remover
+                                </a>
+
+                            </div>
 
                         </tr>
 

@@ -82,6 +82,7 @@ final class PlanoLimiteService
             $data
         );
 
+
         if (
             !isset($errors['chave'])
             && $this->limites
@@ -197,8 +198,6 @@ final class PlanoLimiteService
 
             throw $exception;
         }
-
-        
     }
 
     private function normalize(
@@ -286,14 +285,13 @@ final class PlanoLimiteService
                 'Informe o valor do limite.';
         } elseif (
             preg_match(
-                '/^\d+(?:\.\d{1,2})?$/',
+                '/^\d+(?:\.\d{1,4})?$/',
                 $data['valor']
             ) !== 1
         ) {
             $errors['valor'] =
                 'Informe um valor numérico válido.';
         }
-
         if (
             mb_strlen(
                 $data['unidade'],
@@ -531,6 +529,115 @@ final class PlanoLimiteService
             }
 
             throw $exception;
+        } catch (Throwable $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            throw $exception;
+        }
+    }
+
+    /**
+     * Remove um limite do plano.
+     */
+    public function remover(
+        int $planoId,
+        int $limiteId,
+        int $usuarioId,
+        ?string $ip,
+        ?string $userAgent
+    ): array {
+        /*
+     * Primeiro validamos o plano.
+     */
+        $plano = $this->planos->findById(
+            $planoId
+        );
+
+        if ($plano === null) {
+            return [
+                'success' => false,
+                'not_found' => true,
+                'message' => null,
+            ];
+        }
+
+        $pdo = Database::connection();
+
+        try {
+            $pdo->beginTransaction();
+
+            /*
+         * A própria exclusão verifica:
+         *
+         * limite.id
+         * +
+         * limite.plano_id
+         *
+         * Isso mantém a proteção contra IDOR
+         * até o momento exato da escrita.
+         */
+            $limiteRemovido =
+                $this->limites->deleteReturning(
+                    $limiteId,
+                    $planoId
+                );
+
+            if ($limiteRemovido === null) {
+                $pdo->rollBack();
+
+                return [
+                    'success' => false,
+                    'not_found' => true,
+                    'message' => null,
+                ];
+            }
+
+            /*
+         * Auditoria explícita.
+         *
+         * Nunca gravamos $_POST inteiro.
+         */
+            $this->auditoria->create(
+                $usuarioId,
+                'LIMITE_PLANO_REMOVIDO',
+                'planos',
+                'plano_limite',
+                $limiteId,
+                $ip,
+                $userAgent,
+
+                [
+                    'plano_id' =>
+                    (int) $limiteRemovido['plano_id'],
+
+                    'chave' =>
+                    (string) $limiteRemovido['chave'],
+
+                    'valor' =>
+                    (string) $limiteRemovido['valor'],
+
+                    'unidade' =>
+                    is_string(
+                        $limiteRemovido['unidade']
+                            ?? null
+                    )
+                        ? $limiteRemovido['unidade']
+                        : '',
+                ],
+
+                null
+            );
+
+            $pdo->commit();
+
+            return [
+                'success' => true,
+                'not_found' => false,
+                'message' =>
+                'Limite removido com sucesso.',
+            ];
         } catch (Throwable $exception) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();

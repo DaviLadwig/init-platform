@@ -362,3 +362,65 @@ $router->post(
         ]),
     ]
 );
+
+$router->get(
+    '/planos/{id}/limites/{limiteId}/editar',
+    [
+        PlanoLimiteController::class,
+        'edit',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+
+$router->post(
+    '/planos/{id}/limites/{limiteId}',
+    [
+        PlanoLimiteController::class,
+        'update',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+$router->get(
+    '/planos/{id}/limites/{limiteId}/remover',
+    [
+        PlanoLimiteController::class,
+        'confirmDelete',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+
+$router->post(
+    '/planos/{id}/limites/{limiteId}/remover',
+    [
+        PlanoLimiteController::class,
+        'destroy',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);

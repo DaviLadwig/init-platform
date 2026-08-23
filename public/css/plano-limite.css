@@ -158,6 +158,101 @@
     font-weight: 400;
 }
 
+
+/* ============================================================
+   DELETE
+============================================================ */
+
+.limit-delete-panel {
+    max-width: 760px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.006);
+}
+
+.limit-delete-context,
+.limit-delete-target,
+.limit-delete-warning {
+    padding: 20px 22px;
+    border-bottom: 1px solid var(--color-border-soft);
+}
+
+.limit-delete-context {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 8px 18px;
+}
+
+.limit-delete-context span,
+.limit-delete-target>span {
+    color: var(--color-text-secondary);
+    font-size: 10px;
+    font-weight: 400;
+}
+
+.limit-delete-context strong,
+.limit-delete-target strong {
+    color: var(--color-text);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.limit-delete-target p {
+    margin: 7px 0 0;
+    color: var(--color-text-secondary);
+    font-size: 11px;
+    font-weight: 400;
+}
+
+.limit-delete-warning {
+    background: rgba(185, 58, 58, 0.035);
+}
+
+.limit-delete-warning strong {
+    color: #d99696;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.limit-delete-warning p {
+    max-width: 620px;
+    margin: 6px 0 0;
+    color: var(--color-text-secondary);
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.6;
+}
+
+.limit-delete-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 9px;
+    padding: 18px 22px;
+}
+
+.button-danger {
+    min-height: 40px;
+    padding: 0 16px;
+
+    border: 1px solid rgba(213, 80, 80, 0.30);
+    border-radius: var(--radius-sm);
+
+    background: rgba(183, 56, 56, 0.08);
+
+    color: #dd9090;
+
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+
+    cursor: pointer;
+}
+
+.button-danger:hover {
+    border-color: rgba(213, 80, 80, 0.45);
+    background: rgba(183, 56, 56, 0.12);
+}
+
 /* ============================================================
    RESPONSIVE
 ============================================================ */

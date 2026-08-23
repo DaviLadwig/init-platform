@@ -236,4 +236,48 @@ final class PlanoLimiteRepository
             );
         }
     }
+
+    /**
+     * Remove um limite somente se ele pertencer
+     * ao plano informado.
+     *
+     * DELETE ... RETURNING evita uma segunda consulta
+     * e também protege contra IDOR/race condition.
+     */
+    public function deleteReturning(
+        int $limiteId,
+        int $planoId
+    ): ?array {
+        $pdo = Database::connection();
+
+        $statement = $pdo->prepare(
+            '
+        DELETE FROM public.plano_limites
+        WHERE id = :limite_id
+          AND plano_id = :plano_id
+
+        RETURNING
+            id,
+            plano_id,
+            chave,
+            valor,
+            unidade,
+            criado_em,
+            atualizado_em
+        '
+        );
+
+        $statement->execute([
+            'limite_id' => $limiteId,
+            'plano_id' => $planoId,
+        ]);
+
+        $row = $statement->fetch(
+            PDO::FETCH_ASSOC
+        );
+
+        return is_array($row)
+            ? $row
+            : null;
+    }
 }

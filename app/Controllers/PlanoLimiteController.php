@@ -173,20 +173,20 @@ final class PlanoLimiteController
                     'plano' => $plano,
 
                     'errors' =>
-                        is_array(
-                            $result['errors']
+                    is_array(
+                        $result['errors']
                             ?? null
-                        )
-                            ? $result['errors']
-                            : [],
+                    )
+                        ? $result['errors']
+                        : [],
 
                     'formData' =>
-                        is_array(
-                            $result['data']
+                    is_array(
+                        $result['data']
                             ?? null
-                        )
-                            ? $result['data']
-                            : [],
+                    )
+                        ? $result['data']
+                        : [],
 
                     'pageStyles' => [
                         'plano-limites.css',
@@ -209,6 +209,326 @@ final class PlanoLimiteController
             303
         );
     }
+
+    /**
+     * Exibe o formulário de edição.
+     */
+    public function edit(
+        string $id,
+        string $limiteId
+    ): void {
+        $planoId = $this->validateId(
+            $id
+        );
+
+        $limiteIdInt = $this->validateId(
+            $limiteId
+        );
+
+        $plano = $this->service->buscarPlano(
+            $planoId
+        );
+
+        if ($plano === null) {
+            throw new HttpException(
+                404,
+                'Plano não encontrado.'
+            );
+        }
+
+        $limite = $this->service->buscarLimite(
+            $planoId,
+            $limiteIdInt
+        );
+
+        /*
+     * Não revelamos se o limite existe em outro
+     * plano. Para este contexto, simplesmente
+     * não existe.
+     */
+        if ($limite === null) {
+            throw new HttpException(
+                404,
+                'Limite não encontrado.'
+            );
+        }
+
+        $this->render(
+            'planos/limites/edit.php',
+            'Editar limite',
+            'planos',
+            [
+                'plano' => $plano,
+                'limiteId' => $limiteIdInt,
+
+                'errors' => [],
+
+                'formData' => [
+                    'chave' =>
+                    is_string(
+                        $limite['chave']
+                            ?? null
+                    )
+                        ? $limite['chave']
+                        : '',
+
+                    'valor' =>
+                    is_numeric(
+                        $limite['valor']
+                            ?? null
+                    )
+                        ? $this->formatNumericValue(
+                            (string) $limite['valor']
+                        )
+                        : '',
+
+                    'unidade' =>
+                    is_string(
+                        $limite['unidade']
+                            ?? null
+                    )
+                        ? $limite['unidade']
+                        : '',
+                ],
+
+                'pageStyles' => [
+                    'plano-limites.css',
+                ],
+            ]
+        );
+    }
+
+    /**
+     * Processa a edição.
+     */
+    public function update(
+        string $id,
+        string $limiteId
+    ): void {
+        $planoId = $this->validateId(
+            $id
+        );
+
+        $limiteIdInt = $this->validateId(
+            $limiteId
+        );
+
+        $this->enforceCsrf();
+
+        $context = $this->requestContext();
+
+        $result = $this->service->editar(
+            $planoId,
+            $limiteIdInt,
+            $_POST,
+            $context['usuario_id'],
+            $context['ip'],
+            $context['user_agent']
+        );
+
+        if (
+            ($result['not_found'] ?? false)
+            === true
+        ) {
+            throw new HttpException(
+                404,
+                'Limite não encontrado.'
+            );
+        }
+
+        if (
+            ($result['success'] ?? false)
+            !== true
+        ) {
+            $plano = $this->service->buscarPlano(
+                $planoId
+            );
+
+            if ($plano === null) {
+                throw new HttpException(
+                    404,
+                    'Plano não encontrado.'
+                );
+            }
+
+            http_response_code(422);
+
+            $this->render(
+                'planos/limites/edit.php',
+                'Editar limite',
+                'planos',
+                [
+                    'plano' => $plano,
+
+                    'limiteId' =>
+                    $limiteIdInt,
+
+                    'errors' =>
+                    is_array(
+                        $result['errors']
+                            ?? null
+                    )
+                        ? $result['errors']
+                        : [],
+
+                    'formData' =>
+                    is_array(
+                        $result['data']
+                            ?? null
+                    )
+                        ? $result['data']
+                        : [],
+
+                    'pageStyles' => [
+                        'plano-limites.css',
+                    ],
+                ]
+            );
+
+            return;
+        }
+
+        Session::set(
+            '_flash_success',
+            'Limite atualizado com sucesso.'
+        );
+
+        $this->redirect(
+            '/planos/'
+                . $planoId
+                . '/limites',
+            303
+        );
+    }
+
+    /**
+     * Exibe a confirmação de remoção.
+     *
+     * GET apenas mostra a tela.
+     * Nenhum dado é alterado aqui.
+     */
+    public function confirmDelete(
+        string $id,
+        string $limiteId
+    ): void {
+        $planoId = $this->validateId(
+            $id
+        );
+
+        $limiteIdInt = $this->validateId(
+            $limiteId
+        );
+
+        $plano = $this->service->buscarPlano(
+            $planoId
+        );
+
+        if ($plano === null) {
+            throw new HttpException(
+                404,
+                'Plano não encontrado.'
+            );
+        }
+
+        $limite = $this->service->buscarLimite(
+            $planoId,
+            $limiteIdInt
+        );
+
+        /*
+     * Não revelamos que o limite possa existir
+     * vinculado a outro plano.
+     */
+        if ($limite === null) {
+            throw new HttpException(
+                404,
+                'Limite não encontrado.'
+            );
+        }
+
+        $this->render(
+            'planos/limites/delete.php',
+            'Remover limite',
+            'planos',
+            [
+                'plano' => $plano,
+                'limite' => $limite,
+
+                'pageStyles' => [
+                    'plano-limites.css',
+                ],
+            ]
+        );
+    }
+
+    /**
+     * Remove definitivamente o limite.
+     */
+    public function destroy(
+        string $id,
+        string $limiteId
+    ): void {
+        $planoId = $this->validateId(
+            $id
+        );
+
+        $limiteIdInt = $this->validateId(
+            $limiteId
+        );
+
+        $this->enforceCsrf();
+
+        $context = $this->requestContext();
+
+        $result = $this->service->remover(
+            $planoId,
+            $limiteIdInt,
+            $context['usuario_id'],
+            $context['ip'],
+            $context['user_agent']
+        );
+
+        if (
+            ($result['not_found'] ?? false)
+            === true
+        ) {
+            throw new HttpException(
+                404,
+                'Limite não encontrado.'
+            );
+        }
+
+        if (
+            ($result['success'] ?? false)
+            !== true
+        ) {
+            Session::set(
+                '_flash_error',
+                'Não foi possível remover o limite.'
+            );
+
+            $this->redirect(
+                '/planos/'
+                    . $planoId
+                    . '/limites',
+                303
+            );
+        }
+
+        Session::set(
+            '_flash_success',
+            'Limite removido com sucesso.'
+        );
+
+        $this->redirect(
+            '/planos/'
+                . $planoId
+                . '/limites',
+            303
+        );
+    }
+
+    /*FUNÇÕES PRIVADAS*/
 
     private function consumeFlash(
         string $key
@@ -249,8 +569,8 @@ final class PlanoLimiteController
         $usuarioId = is_array($auth)
             && isset($auth['user_id'])
             && is_int($auth['user_id'])
-                ? $auth['user_id']
-                : 0;
+            ? $auth['user_id']
+            : 0;
 
         if ($usuarioId <= 0) {
             throw new RuntimeException(
@@ -316,21 +636,21 @@ final class PlanoLimiteController
         $userName = is_array($auth)
             && isset($auth['name'])
             && is_string($auth['name'])
-                ? $auth['name']
-                : 'Usuário';
+            ? $auth['name']
+            : 'Usuário';
 
         $roles = is_array($auth)
             && isset($auth['roles'])
             && is_array($auth['roles'])
-                ? $auth['roles']
-                : [];
+            ? $auth['roles']
+            : [];
 
         $userRole = implode(
             ', ',
             array_filter(
                 $roles,
-                static fn (mixed $role): bool =>
-                    is_string($role)
+                static fn(mixed $role): bool =>
+                is_string($role)
                     && $role !== ''
             )
         );
@@ -394,5 +714,29 @@ final class PlanoLimiteController
         );
 
         exit;
+    }
+
+    /**
+     * Remove zeros decimais apenas para apresentação.
+     *
+     * 10.0000 -> 10
+     * 10.5000 -> 10.5
+     */
+    private function formatNumericValue(
+        string $value
+    ): string {
+        if (str_contains($value, '.')) {
+            $value = rtrim(
+                rtrim(
+                    $value,
+                    '0'
+                ),
+                '.'
+            );
+        }
+
+        return $value !== ''
+            ? $value
+            : '0';
     }
 }
