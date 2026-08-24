@@ -17,6 +17,62 @@ $viewAppUrl = isset($appUrl)
     ? rtrim($appUrl, '/')
     : '';
 
+$viewSuccess = isset($success)
+    && is_string($success)
+    ? $success
+    : null;
+
+$viewError = isset($error)
+    && is_string($error)
+    ? $error
+    : null;
+
+$totalClientes = count($viewClientes);
+
+$e = static fn(string $value): string => htmlspecialchars(
+    $value,
+    ENT_QUOTES,
+    'UTF-8'
+);
+
+$stringValue = static function (
+    array $source,
+    string $key
+): string {
+    $value = $source[$key] ?? null;
+
+    return is_string($value)
+        ? $value
+        : '';
+};
+
+$formatCnpj = static function (
+    string $cnpj
+): string {
+    $digits = preg_replace(
+        '/\D+/',
+        '',
+        $cnpj
+    );
+
+    if (
+        !is_string($digits)
+        || strlen($digits) !== 14
+    ) {
+        return $cnpj;
+    }
+
+    return substr($digits, 0, 2)
+        . '.'
+        . substr($digits, 2, 3)
+        . '.'
+        . substr($digits, 5, 3)
+        . '/'
+        . substr($digits, 8, 4)
+        . '-'
+        . substr($digits, 12, 2);
+};
+
 ?>
 
 <section class="page-heading">
@@ -37,37 +93,110 @@ $viewAppUrl = isset($appUrl)
 
     </div>
 
+    <a
+        href="<?= $e(
+                    $viewAppUrl . '/clientes/novo'
+                ) ?>"
+        class="button-primary">
+        Novo cliente
+    </a>
+
 </section>
 
 
-<section class="client-summary">
+<?php if (
+    $viewSuccess !== null
+    && $viewSuccess !== ''
+): ?>
+
+    <div
+        class="form-alert form-alert-success page-alert"
+        role="status">
+        <?= $e($viewSuccess) ?>
+    </div>
+
+<?php endif; ?>
+
+
+<?php if (
+    $viewError !== null
+    && $viewError !== ''
+): ?>
+
+    <div
+        class="form-alert form-alert-error page-alert"
+        role="alert">
+        <?= $e($viewError) ?>
+    </div>
+
+<?php endif; ?>
+
+
+<section
+    class="client-summary"
+    aria-label="Resumo da base de clientes">
 
     <article class="client-summary-item">
-        <span>Total de clientes</span>
+
+        <span>
+            Total de clientes
+        </span>
+
         <strong>
-            <?= (int) ($viewResumo['total'] ?? 0) ?>
+            <?= (int) (
+                $viewResumo['total']
+                ?? $totalClientes
+            ) ?>
         </strong>
+
     </article>
 
-    <article class="client-summary-item">
-        <span>Operação regular</span>
-        <strong>
-            <?= (int) ($viewResumo['ativos'] ?? 0) ?>
-        </strong>
-    </article>
 
     <article class="client-summary-item">
-        <span>Exigem atenção</span>
+
+        <span>
+            Operação regular
+        </span>
+
         <strong>
-            <?= (int) ($viewResumo['atencao'] ?? 0) ?>
+            <?= (int) (
+                $viewResumo['ativos']
+                ?? 0
+            ) ?>
         </strong>
+
     </article>
 
+
     <article class="client-summary-item">
-        <span>Suspensos</span>
+
+        <span>
+            Exigem atenção
+        </span>
+
         <strong>
-            <?= (int) ($viewResumo['suspensos'] ?? 0) ?>
+            <?= (int) (
+                $viewResumo['atencao']
+                ?? 0
+            ) ?>
         </strong>
+
+    </article>
+
+
+    <article class="client-summary-item">
+
+        <span>
+            Suspensos
+        </span>
+
+        <strong>
+            <?= (int) (
+                $viewResumo['suspensos']
+                ?? 0
+            ) ?>
+        </strong>
+
     </article>
 
 </section>
@@ -84,9 +213,13 @@ $viewAppUrl = isset($appUrl)
             </h2>
 
             <p>
-                <?= count($viewClientes) ?>
-                cliente<?= count($viewClientes) === 1 ? '' : 's' ?>
-                cadastrado<?= count($viewClientes) === 1 ? '' : 's' ?>
+                <?= $totalClientes ?>
+                cliente<?= $totalClientes === 1
+                            ? ''
+                            : 's' ?>
+                cadastrado<?= $totalClientes === 1
+                                ? ''
+                                : 's' ?>
             </p>
 
         </div>
@@ -103,7 +236,7 @@ $viewAppUrl = isset($appUrl)
             </h3>
 
             <p>
-                As empresas contratantes aparecerão aqui.
+                Cadastre a primeira empresa para iniciar a estrutura comercial da plataforma.
             </p>
 
         </div>
@@ -112,7 +245,7 @@ $viewAppUrl = isset($appUrl)
 
         <div class="table-responsive">
 
-            <table class="data-table">
+            <table class="data-table clients-table">
 
                 <thead>
 
@@ -135,73 +268,136 @@ $viewAppUrl = isset($appUrl)
 
                         <?php
 
+                        if (!is_array($cliente)) {
+                            continue;
+                        }
+
                         $clienteId = isset($cliente['id'])
                             ? (int) $cliente['id']
                             : 0;
 
-                        $razaoSocial =
-                            isset($cliente['razao_social'])
-                            && is_string($cliente['razao_social'])
-                            ? $cliente['razao_social']
-                            : '';
+                        $razaoSocial = $stringValue(
+                            $cliente,
+                            'razao_social'
+                        );
 
-                        $nomeFantasia =
-                            isset($cliente['nome_fantasia'])
-                            && is_string($cliente['nome_fantasia'])
-                            ? $cliente['nome_fantasia']
-                            : '';
+                        $nomeFantasia = $stringValue(
+                            $cliente,
+                            'nome_fantasia'
+                        );
 
-                        $email =
-                            isset($cliente['email'])
-                            && is_string($cliente['email'])
-                            ? $cliente['email']
-                            : '';
+                        $email = $stringValue(
+                            $cliente,
+                            'email'
+                        );
 
-                        $cnpj =
-                            isset($cliente['cnpj'])
-                            && is_string($cliente['cnpj'])
-                            ? $cliente['cnpj']
-                            : '';
+                        $cnpj = $stringValue(
+                            $cliente,
+                            'cnpj'
+                        );
 
-                        $produtos =
-                            isset($cliente['produtos'])
-                            && is_string($cliente['produtos'])
-                            ? $cliente['produtos']
-                            : '';
+                        $produtos = $stringValue(
+                            $cliente,
+                            'produtos'
+                        );
 
-                        $totalProdutos =
-                            (int) (
-                                $cliente['total_produtos']
-                                ?? 0
-                            );
+                        $situacao = $stringValue(
+                            $cliente,
+                            'situacao_comercial'
+                        );
 
-                        $ativas =
-                            (int) (
-                                $cliente['assinaturas_ativas']
-                                ?? 0
-                            );
+                        if ($situacao === '') {
+                            $situacao = 'SEM_ASSINATURA';
+                        }
 
-                        $atrasadas =
-                            (int) (
-                                $cliente['assinaturas_atrasadas']
-                                ?? 0
-                            );
+                        $totalProdutos = (int) (
+                            $cliente['total_produtos']
+                            ?? 0
+                        );
 
-                        $suspensas =
-                            (int) (
-                                $cliente['assinaturas_suspensas']
-                                ?? 0
-                            );
+                        $totalAssinaturas = (int) (
+                            $cliente['total_assinaturas']
+                            ?? 0
+                        );
 
-                        $situacao =
-                            isset(
-                                $cliente['situacao_comercial']
-                            )
-                            && is_string(
-                                $cliente['situacao_comercial']
-                            )
-                            ? $cliente['situacao_comercial']
-                            : 'SEM_ASSINATURA';
+                        $ativas = (int) (
+                            $cliente['assinaturas_ativas']
+                            ?? 0
+                        );
+
+                        $trial = (int) (
+                            $cliente['assinaturas_trial']
+                            ?? 0
+                        );
+
+                        $atrasadas = (int) (
+                            $cliente['assinaturas_atrasadas']
+                            ?? 0
+                        );
+
+                        $suspensas = (int) (
+                            $cliente['assinaturas_suspensas']
+                            ?? 0
+                        );
+
+                        $pendentes = (int) (
+                            $cliente['assinaturas_pendentes']
+                            ?? 0
+                        );
+
+                        $nomePrincipal =
+                            $nomeFantasia !== ''
+                            ? $nomeFantasia
+                            : $razaoSocial;
+
+                        $detalheCliente = '';
+
+                        if (
+                            $nomeFantasia !== ''
+                            && $razaoSocial !== ''
+                            && $nomeFantasia !== $razaoSocial
+                        ) {
+                            $detalheCliente = $razaoSocial;
+                        } elseif ($email !== '') {
+                            $detalheCliente = $email;
+                        }
+
+                        [$statusClass, $statusLabel] = match ($situacao) {
+                            'ATIVO' => [
+                                'client-state-ok',
+                                'Regular',
+                            ],
+
+                            'ATENCAO' => [
+                                'client-state-warning',
+                                'Atenção',
+                            ],
+
+                            'SUSPENSO' => [
+                                'client-state-danger',
+                                'Suspenso',
+                            ],
+
+                            'TRIAL' => [
+                                'client-state-info',
+                                'Trial',
+                            ],
+
+                            'PENDENTE' => [
+                                'client-state-info',
+                                'Pendente',
+                            ],
+
+                            'INATIVO' => [
+                                'client-state-danger',
+                                'Inativo',
+                            ],
+
+                            default => [
+                                'client-state-neutral',
+                                'Sem assinatura',
+                            ],
+                        };
 
                         ?>
 
@@ -212,36 +408,18 @@ $viewAppUrl = isset($appUrl)
                                 <div class="client-cell">
 
                                     <strong>
-                                        <?= htmlspecialchars(
-                                            $nomeFantasia !== ''
-                                                ? $nomeFantasia
-                                                : $razaoSocial,
-                                            ENT_QUOTES,
-                                            'UTF-8'
+                                        <?= $e(
+                                            $nomePrincipal
                                         ) ?>
                                     </strong>
 
                                     <?php if (
-                                        $nomeFantasia !== ''
-                                        && $razaoSocial !== ''
-                                        && $nomeFantasia !== $razaoSocial
+                                        $detalheCliente !== ''
                                     ): ?>
 
                                         <span>
-                                            <?= htmlspecialchars(
-                                                $razaoSocial,
-                                                ENT_QUOTES,
-                                                'UTF-8'
-                                            ) ?>
-                                        </span>
-
-                                    <?php elseif ($email !== ''): ?>
-
-                                        <span>
-                                            <?= htmlspecialchars(
-                                                $email,
-                                                ENT_QUOTES,
-                                                'UTF-8'
+                                            <?= $e(
+                                                $detalheCliente
                                             ) ?>
                                         </span>
 
@@ -255,10 +433,10 @@ $viewAppUrl = isset($appUrl)
                             <td>
 
                                 <span class="table-muted">
-                                    <?= htmlspecialchars(
-                                        $cnpj,
-                                        ENT_QUOTES,
-                                        'UTF-8'
+                                    <?= $e(
+                                        $formatCnpj(
+                                            $cnpj
+                                        )
                                     ) ?>
                                 </span>
 
@@ -267,21 +445,30 @@ $viewAppUrl = isset($appUrl)
 
                             <td>
 
-                                <?php if ($totalProdutos > 0): ?>
+                                <?php if (
+                                    $totalProdutos > 0
+                                ): ?>
 
                                     <div class="client-products">
 
                                         <strong>
                                             <?= $totalProdutos ?>
+                                            produto<?= $totalProdutos === 1
+                                                        ? ''
+                                                        : 's' ?>
                                         </strong>
 
-                                        <span>
-                                            <?= htmlspecialchars(
-                                                $produtos,
-                                                ENT_QUOTES,
-                                                'UTF-8'
-                                            ) ?>
-                                        </span>
+                                        <?php if (
+                                            $produtos !== ''
+                                        ): ?>
+
+                                            <span>
+                                                <?= $e(
+                                                    $produtos
+                                                ) ?>
+                                            </span>
+
+                                        <?php endif; ?>
 
                                     </div>
 
@@ -298,89 +485,90 @@ $viewAppUrl = isset($appUrl)
 
                             <td>
 
-                                <div class="subscription-summary">
+                                <?php if (
+                                    $totalAssinaturas > 0
+                                ): ?>
 
-                                    <?php if ($ativas > 0): ?>
-                                        <span>
-                                            <?= $ativas ?> ativa<?= $ativas === 1 ? '' : 's' ?>
-                                        </span>
-                                    <?php endif; ?>
+                                    <div class="subscription-summary">
 
-                                    <?php if ($atrasadas > 0): ?>
-                                        <span>
-                                            <?= $atrasadas ?> atrasada<?= $atrasadas === 1 ? '' : 's' ?>
-                                        </span>
-                                    <?php endif; ?>
+                                        <?php if ($ativas > 0): ?>
 
-                                    <?php if ($suspensas > 0): ?>
-                                        <span>
-                                            <?= $suspensas ?> suspensa<?= $suspensas === 1 ? '' : 's' ?>
-                                        </span>
-                                    <?php endif; ?>
+                                            <span>
+                                                <?= $ativas ?>
+                                                ativa<?= $ativas === 1
+                                                            ? ''
+                                                            : 's' ?>
+                                            </span>
 
-                                    <?php if (
-                                        $ativas === 0
-                                        && $atrasadas === 0
-                                        && $suspensas === 0
-                                    ): ?>
+                                        <?php endif; ?>
 
-                                        <span class="table-muted">
-                                            —
-                                        </span>
 
-                                    <?php endif; ?>
+                                        <?php if ($trial > 0): ?>
 
-                                </div>
+                                            <span>
+                                                <?= $trial ?> trial
+                                            </span>
+
+                                        <?php endif; ?>
+
+
+                                        <?php if ($atrasadas > 0): ?>
+
+                                            <span>
+                                                <?= $atrasadas ?>
+                                                atrasada<?= $atrasadas === 1
+                                                            ? ''
+                                                            : 's' ?>
+                                            </span>
+
+                                        <?php endif; ?>
+
+
+                                        <?php if ($suspensas > 0): ?>
+
+                                            <span>
+                                                <?= $suspensas ?>
+                                                suspensa<?= $suspensas === 1
+                                                            ? ''
+                                                            : 's' ?>
+                                            </span>
+
+                                        <?php endif; ?>
+
+
+                                        <?php if ($pendentes > 0): ?>
+
+                                            <span>
+                                                <?= $pendentes ?>
+                                                pendente<?= $pendentes === 1
+                                                            ? ''
+                                                            : 's' ?>
+                                            </span>
+
+                                        <?php endif; ?>
+
+                                    </div>
+
+                                <?php else: ?>
+
+                                    <span class="table-muted">
+                                        Nenhuma
+                                    </span>
+
+                                <?php endif; ?>
 
                             </td>
 
 
                             <td>
 
-                                <?php
-
-                                $statusClass = match ($situacao) {
-                                    'ATIVO' =>
-                                    'client-state-ok',
-
-                                    'ATENCAO' =>
-                                    'client-state-warning',
-
-                                    'SUSPENSO' =>
-                                    'client-state-danger',
-
-                                    'TRIAL' =>
-                                    'client-state-info',
-
-                                    default =>
-                                    'client-state-neutral',
-                                };
-
-                                $statusLabel = match ($situacao) {
-                                    'ATIVO' =>
-                                    'Regular',
-
-                                    'ATENCAO' =>
-                                    'Atenção',
-
-                                    'SUSPENSO' =>
-                                    'Suspenso',
-
-                                    'TRIAL' =>
-                                    'Trial',
-
-                                    'PENDENTE' =>
-                                    'Pendente',
-
-                                    default =>
-                                    'Sem assinatura',
-                                };
-
-                                ?>
-
                                 <span
-                                    class="client-state <?= $statusClass ?>">
-                                    <?= $statusLabel ?>
+                                    class="client-state <?= $e(
+                                                            $statusClass
+                                                        ) ?>">
+                                    <?= $e(
+                                        $statusLabel
+                                    ) ?>
                                 </span>
 
                             </td>
@@ -388,20 +576,32 @@ $viewAppUrl = isset($appUrl)
 
                             <td>
 
-                                <a
-                                    href="<?= htmlspecialchars(
-                                                $viewAppUrl
-                                                    . '/clientes/'
-                                                    . $clienteId,
-                                                ENT_QUOTES,
-                                                'UTF-8'
-                                            ) ?>"
-                                    class="table-action">
-                                    Ver
-                                </a>
+                                <div class="table-actions">
+
+                                    <a
+                                        href="<?= $e(
+                                                    $viewAppUrl
+                                                        . '/clientes/'
+                                                        . $clienteId
+                                                ) ?>"
+                                        class="table-action">
+                                        Ver
+                                    </a>
+
+                                    <a
+                                        href="<?= $e(
+                                                    $viewAppUrl
+                                                        . '/clientes/'
+                                                        . $clienteId
+                                                        . '/editar'
+                                                ) ?>"
+                                        class="table-action">
+                                        Editar
+                                    </a>
+
+                                </div>
 
                             </td>
-
                         </tr>
 
                     <?php endforeach; ?>

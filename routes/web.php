@@ -3,12 +3,15 @@
 declare(strict_types=1);
 
 use App\Controllers\AuthController;
+use App\Controllers\ClienteController;
 use App\Controllers\HomeController;
-use App\Controllers\ProdutoController;
-use App\Middleware\AuthMiddleware;
-use App\Middleware\RoleMiddleware;
 use App\Controllers\PlanoController;
 use App\Controllers\PlanoLimiteController;
+use App\Controllers\ProdutoController;
+
+use App\Middleware\AuthMiddleware;
+use App\Middleware\RoleMiddleware;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -93,20 +96,6 @@ $router->get(
         ]),
     ]
 );
-$router->get(
-    '/produtos',
-    [
-        ProdutoController::class,
-        'index',
-    ],
-    [
-        AuthMiddleware::class,
-
-        new RoleMiddleware([
-            'SUPER_ADMIN',
-        ]),
-    ]
-);
 
 
 $router->get(
@@ -140,6 +129,7 @@ $router->post(
     ]
 );
 
+
 $router->get(
     '/produtos/{id}/editar',
     [
@@ -170,6 +160,7 @@ $router->post(
         ]),
     ]
 );
+
 
 $router->post(
     '/produtos/{id}/ativar',
@@ -224,6 +215,7 @@ $router->get(
     ]
 );
 
+
 $router->get(
     '/planos/novo',
     [
@@ -254,6 +246,7 @@ $router->post(
         ]),
     ]
 );
+
 
 $router->get(
     '/planos/{id}/editar',
@@ -286,6 +279,7 @@ $router->post(
     ]
 );
 
+
 $router->post(
     '/planos/{id}/ativar',
     [
@@ -317,6 +311,13 @@ $router->post(
     ]
 );
 
+
+/*
+|--------------------------------------------------------------------------
+| Limites dos planos
+|--------------------------------------------------------------------------
+*/
+
 $router->get(
     '/planos/{id}/limites',
     [
@@ -331,6 +332,7 @@ $router->get(
         ]),
     ]
 );
+
 
 $router->get(
     '/planos/{id}/limites/novo',
@@ -363,6 +365,7 @@ $router->post(
     ]
 );
 
+
 $router->get(
     '/planos/{id}/limites/{limiteId}/editar',
     [
@@ -394,6 +397,7 @@ $router->post(
     ]
 );
 
+
 $router->get(
     '/planos/{id}/limites/{limiteId}/remover',
     [
@@ -415,6 +419,125 @@ $router->post(
     [
         PlanoLimiteController::class,
         'destroy',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| Clientes
+|--------------------------------------------------------------------------
+*/
+
+/*
+ * Lista de clientes.
+ */
+$router->get(
+    '/clientes',
+    [
+        ClienteController::class,
+        'index',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+
+/*
+ * Formulário de cadastro.
+ */
+$router->get(
+    '/clientes/novo',
+    [
+        ClienteController::class,
+        'create',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+
+/*
+ * Cadastro de cliente.
+ */
+$router->post(
+    '/clientes',
+    [
+        ClienteController::class,
+        'store',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+
+/*
+ * Formulário de edição.
+ */
+$router->get(
+    '/clientes/{id}/editar',
+    [
+        ClienteController::class,
+        'edit',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+
+/*
+ * Atualização cadastral.
+ */
+$router->post(
+    '/clientes/{id}',
+    [
+        ClienteController::class,
+        'update',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+/*
+ * Ficha cadastral do cliente.
+ */
+$router->get(
+    '/clientes/{id}',
+    [
+        ClienteController::class,
+        'show',
     ],
     [
         AuthMiddleware::class,

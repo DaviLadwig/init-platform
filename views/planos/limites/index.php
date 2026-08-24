@@ -2,54 +2,123 @@
 
 declare(strict_types=1);
 
-$viewPlano = isset($plano)
-    && is_array($plano)
-        ? $plano
-        : [];
+$viewClientes = isset($clientes) && is_array($clientes)
+    ? $clientes
+    : [];
 
-$viewLimites = isset($limites)
-    && is_array($limites)
-        ? $limites
-        : [];
+$viewResumo = isset($resumo) && is_array($resumo)
+    ? $resumo
+    : [];
 
-$viewAppUrl = isset($appUrl)
-    && is_string($appUrl)
-        ? rtrim($appUrl, '/')
+$viewAppUrl = isset($appUrl) && is_string($appUrl)
+    ? rtrim($appUrl, '/')
+    : '';
+
+$viewSuccess = isset($success) && is_string($success)
+    ? $success
+    : null;
+
+$viewError = isset($error) && is_string($error)
+    ? $error
+    : null;
+
+/**
+ * Escapa conteúdo dinâmico para saída HTML.
+ */
+$e = static fn (string $value): string => htmlspecialchars(
+    $value,
+    ENT_QUOTES,
+    'UTF-8'
+);
+
+/**
+ * Retorna uma string segura de um array.
+ */
+$stringValue = static function (
+    array $source,
+    string $key
+): string {
+    $value = $source[$key] ?? null;
+
+    return is_string($value)
+        ? $value
         : '';
+};
 
-$viewSuccess = isset($success)
-    && is_string($success)
-        ? $success
-        : null;
+/**
+ * Formata CNPJ apenas para apresentação.
+ *
+ * O banco continua armazenando somente números.
+ */
+$formatCnpj = static function (
+    string $cnpj
+): string {
+    $digits = preg_replace(
+        '/\D+/',
+        '',
+        $cnpj
+    );
 
-$viewError = isset($error)
-    && is_string($error)
-        ? $error
-        : null;
+    if (
+        !is_string($digits)
+        || strlen($digits) !== 14
+    ) {
+        return $cnpj;
+    }
 
-$planoId = isset($viewPlano['id'])
-    ? (int) $viewPlano['id']
-    : 0;
+    return substr($digits, 0, 2)
+        . '.'
+        . substr($digits, 2, 3)
+        . '.'
+        . substr($digits, 5, 3)
+        . '/'
+        . substr($digits, 8, 4)
+        . '-'
+        . substr($digits, 12, 2);
+};
 
-$planoNome = isset($viewPlano['nome'])
-    && is_string($viewPlano['nome'])
-        ? $viewPlano['nome']
-        : '';
+/**
+ * Formata telefone somente para apresentação.
+ */
+$formatTelefone = static function (
+    string $telefone
+): string {
+    $digits = preg_replace(
+        '/\D+/',
+        '',
+        $telefone
+    );
 
-$planoCodigo = isset($viewPlano['codigo'])
-    && is_string($viewPlano['codigo'])
-        ? $viewPlano['codigo']
-        : '';
+    if (!is_string($digits)) {
+        return $telefone;
+    }
 
-$produtoNome = isset($viewPlano['produto_nome'])
-    && is_string($viewPlano['produto_nome'])
-        ? $viewPlano['produto_nome']
-        : '';
+    if (strlen($digits) === 11) {
+        return '('
+            . substr($digits, 0, 2)
+            . ') '
+            . substr($digits, 2, 5)
+            . '-'
+            . substr($digits, 7, 4);
+    }
 
-$produtoCodigo = isset($viewPlano['produto_codigo'])
-    && is_string($viewPlano['produto_codigo'])
-        ? $viewPlano['produto_codigo']
-        : '';
+    if (strlen($digits) === 10) {
+        return '('
+            . substr($digits, 0, 2)
+            . ') '
+            . substr($digits, 2, 4)
+            . '-'
+            . substr($digits, 6, 4);
+    }
+
+    return $telefone;
+};
+
+$totalClientes = count($viewClientes);
+
+$totalAtencao =
+    (int) ($viewResumo['atencao'] ?? 0)
+    + (int) ($viewResumo['suspensos'] ?? 0);
 
 ?>
 
@@ -58,28 +127,26 @@ $produtoCodigo = isset($viewPlano['produto_codigo'])
     <div>
 
         <span class="page-eyebrow">
-            Configuração comercial
+            Base comercial
         </span>
 
         <h1>
-            Limites do plano
+            Clientes
         </h1>
 
         <p>
-            Defina as capacidades e restrições comerciais aplicadas a este plano.
+            Empresas cadastradas e situação dos serviços contratados na plataforma Init.
         </p>
 
     </div>
 
     <a
-        href="<?= htmlspecialchars(
-            $viewAppUrl . '/planos',
-            ENT_QUOTES,
-            'UTF-8'
+        href="<?= $e(
+            $viewAppUrl . '/clientes/novo'
         ) ?>"
-        class="button-secondary"
+        class="button-primary"
     >
-        Voltar aos planos
+        Novo cliente
     </a>
 
 </section>
@@ -94,11 +161,7 @@ $produtoCodigo = isset($viewPlano['produto_codigo'])
         class="form-alert form-alert-success page-alert"
         role="status"
     >
-        <?= htmlspecialchars(
-            $viewSuccess,
-            ENT_QUOTES,
-            'UTF-8'
-        ) ?>
+        <?= $e($viewSuccess) ?>
     </div>
 
 <?php endif; ?>
@@ -113,70 +176,76 @@ $produtoCodigo = isset($viewPlano['produto_codigo'])
         class="form-alert form-alert-error page-alert"
         role="alert"
     >
-        <?= htmlspecialchars(
-            $viewError,
-            ENT_QUOTES,
-            'UTF-8'
-        ) ?>
+        <?= $e($viewError) ?>
     </div>
 
 <?php endif; ?>
 
 
-<section class="limit-plan-context">
+<section
+    class="client-summary"
+    aria-label="Resumo da base de clientes"
+>
 
-    <div class="limit-plan-main">
-
-        <span class="limit-plan-label">
-            Plano
-        </span>
-
-        <div class="limit-plan-title">
-
-            <strong>
-                <?= htmlspecialchars(
-                    $planoNome,
-                    ENT_QUOTES,
-                    'UTF-8'
-                ) ?>
-            </strong>
-
-            <span>
-                <?= htmlspecialchars(
-                    $planoCodigo,
-                    ENT_QUOTES,
-                    'UTF-8'
-                ) ?>
-            </span>
-
-        </div>
-
-    </div>
-
-
-    <div class="limit-plan-product">
+    <article class="client-summary-item">
 
         <span>
-            Produto
+            Total de clientes
         </span>
 
         <strong>
-            <?= htmlspecialchars(
-                $produtoNome,
-                ENT_QUOTES,
-                'UTF-8'
+            <?= (int) (
+                $viewResumo['total']
+                ?? $totalClientes
             ) ?>
         </strong>
 
-        <small>
-            <?= htmlspecialchars(
-                $produtoCodigo,
-                ENT_QUOTES,
-                'UTF-8'
-            ) ?>
-        </small>
+    </article>
 
-    </div>
+
+    <article class="client-summary-item">
+
+        <span>
+            Operação regular
+        </span>
+
+        <strong>
+            <?= (int) (
+                $viewResumo['ativos']
+                ?? 0
+            ) ?>
+        </strong>
+
+    </article>
+
+
+    <article class="client-summary-item">
+
+        <span>
+            Exigem atenção
+        </span>
+
+        <strong>
+            <?= $totalAtencao ?>
+        </strong>
+
+    </article>
+
+
+    <article class="client-summary-item">
+
+        <span>
+            Sem assinatura
+        </span>
+
+        <strong>
+            <?= (int) (
+                $viewResumo['sem_assinatura']
+                ?? 0
+            ) ?>
+        </strong>
+
+    </article>
 
 </section>
 
@@ -188,46 +257,34 @@ $produtoCodigo = isset($viewPlano['produto_codigo'])
         <div>
 
             <h2>
-                Limites configurados
+                Base de clientes
             </h2>
 
             <p>
-                <?= count($viewLimites) ?>
-                limite<?= count($viewLimites) === 1
+                <?= $totalClientes ?>
+                cliente<?= $totalClientes === 1
                     ? ''
                     : 's' ?>
-                neste plano
+                cadastrado<?= $totalClientes === 1
+                    ? ''
+                    : 's' ?>
             </p>
 
         </div>
 
-        <a
-            href="<?= htmlspecialchars(
-                $viewAppUrl
-                . '/planos/'
-                . $planoId
-                . '/limites/novo',
-                ENT_QUOTES,
-                'UTF-8'
-            ) ?>"
-            class="button-primary"
-        >
-            Novo limite
-        </a>
-
     </header>
 
 
-    <?php if ($viewLimites === []): ?>
+    <?php if ($viewClientes === []): ?>
 
-        <div class="limits-empty">
+        <div class="empty-state">
 
-            <strong>
-                Nenhum limite configurado
-            </strong>
+            <h3>
+                Nenhum cliente cadastrado
+            </h3>
 
             <p>
-                Este plano ainda não possui restrições ou capacidades comerciais definidas.
+                Cadastre a primeira empresa para iniciar a estrutura comercial da plataforma.
             </p>
 
         </div>
@@ -236,15 +293,16 @@ $produtoCodigo = isset($viewPlano['produto_codigo'])
 
         <div class="table-responsive">
 
-            <table class="data-table limits-table">
+            <table class="data-table clients-table">
 
                 <thead>
 
                     <tr>
-                        <th>Limite</th>
-                        <th>Valor</th>
-                        <th>Unidade</th>
-                        <th>Ações</th>
+                        <th>Cliente</th>
+                        <th>CNPJ</th>
+                        <th>Produtos</th>
+                        <th>Assinaturas</th>
+                        <th>Situação</th>
                     </tr>
 
                 </thead>
@@ -252,51 +310,192 @@ $produtoCodigo = isset($viewPlano['produto_codigo'])
                 <tbody>
 
                     <?php foreach (
-                        $viewLimites as $limite
+                        $viewClientes
+                        as $cliente
                     ): ?>
 
                         <?php
 
-                        $limiteId = isset($limite['id'])
-                            ? (int) $limite['id']
-                            : 0;
-
-                        $chave = isset($limite['chave'])
-                            && is_string($limite['chave'])
-                                ? $limite['chave']
-                                : '';
-
-                        $valor = isset($limite['valor'])
-                            && is_numeric($limite['valor'])
-                                ? (string) $limite['valor']
-                                : '0';
-
-                        /*
-                         * Remove apenas zeros decimais desnecessários
-                         * na apresentação:
-                         *
-                         * 10.0000 -> 10
-                         * 10.5000 -> 10.5
-                         * 10.2500 -> 10.25
-                         */
-                        if (str_contains($valor, '.')) {
-                            $valor = rtrim(
-                                rtrim(
-                                    $valor,
-                                    '0'
-                                ),
-                                '.'
-                            );
+                        if (!is_array($cliente)) {
+                            continue;
                         }
 
-                        if ($valor === '') {
-                            $valor = '0';
+                        $razaoSocial = $stringValue(
+                            $cliente,
+                            'razao_social'
+                        );
+
+                        $nomeFantasia = $stringValue(
+                            $cliente,
+                            'nome_fantasia'
+                        );
+
+                        $cnpj = $stringValue(
+                            $cliente,
+                            'cnpj'
+                        );
+
+                        $email = $stringValue(
+                            $cliente,
+                            'email'
+                        );
+
+                        $telefone = $stringValue(
+                            $cliente,
+                            'telefone'
+                        );
+
+                        $produtos = $stringValue(
+                            $cliente,
+                            'produtos'
+                        );
+
+                        $situacao = $stringValue(
+                            $cliente,
+                            'situacao_comercial'
+                        );
+
+                        $totalProdutos = (int) (
+                            $cliente['total_produtos']
+                            ?? 0
+                        );
+
+                        $totalAssinaturas = (int) (
+                            $cliente['total_assinaturas']
+                            ?? 0
+                        );
+
+                        $ativas = (int) (
+                            $cliente['assinaturas_ativas']
+                            ?? 0
+                        );
+
+                        $trial = (int) (
+                            $cliente['assinaturas_trial']
+                            ?? 0
+                        );
+
+                        $atrasadas = (int) (
+                            $cliente['assinaturas_atrasadas']
+                            ?? 0
+                        );
+
+                        $suspensas = (int) (
+                            $cliente['assinaturas_suspensas']
+                            ?? 0
+                        );
+
+                        $pendentes = (int) (
+                            $cliente['assinaturas_pendentes']
+                            ?? 0
+                        );
+
+                        $nomePrincipal =
+                            $nomeFantasia !== ''
+                                ? $nomeFantasia
+                                : $razaoSocial;
+
+                        $detalheCliente = '';
+
+                        if (
+                            $nomeFantasia !== ''
+                            && $razaoSocial !== ''
+                            && $nomeFantasia !== $razaoSocial
+                        ) {
+                            $detalheCliente =
+                                $razaoSocial;
+                        } elseif ($email !== '') {
+                            $detalheCliente =
+                                $email;
+                        } elseif ($telefone !== '') {
+                            $detalheCliente =
+                                $formatTelefone(
+                                    $telefone
+                                );
                         }
 
-                        $unidade = isset($limite['unidade'])
-                            && is_string($limite['unidade'])
-                                ? $limite['unidade']
-                                : '';
+                        [$statusClass, $statusLabel] = match (
+                            $situacao
+                        ) {
+                            'ATIVO' => [
+                                'client-state-ok',
+                                'Regular',
+                            ],
+
+                            'ATENCAO' => [
+                                'client-state-warning',
+                                'Atenção',
+                            ],
+
+                            'SUSPENSO' => [
+                                'client-state-danger',
+                                'Suspenso',
+                            ],
+
+                            'TRIAL' => [
+                                'client-state-info',
+                                'Trial',
+                            ],
+
+                            'PENDENTE' => [
+                                'client-state-info',
+                                'Pendente',
+                            ],
+
+                            'INATIVO' => [
+                                'client-state-danger',
+                                'Inativo',
+                            ],
+
+                            default => [
+                                'client-state-neutral',
+                                'Sem assinatura',
+                            ],
+                        };
+
+                        $resumoAssinaturas = [];
+
+                        if ($ativas > 0) {
+                            $resumoAssinaturas[] =
+                                $ativas
+                                . ' ativa'
+                                . ($ativas === 1
+                                    ? ''
+                                    : 's');
+                        }
+
+                        if ($trial > 0) {
+                            $resumoAssinaturas[] =
+                                $trial
+                                . ' trial';
+                        }
+
+                        if ($atrasadas > 0) {
+                            $resumoAssinaturas[] =
+                                $atrasadas
+                                . ' atrasada'
+                                . ($atrasadas === 1
+                                    ? ''
+                                    : 's');
+                        }
+
+                        if ($suspensas > 0) {
+                            $resumoAssinaturas[] =
+                                $suspensas
+                                . ' suspensa'
+                                . ($suspensas === 1
+                                    ? ''
+                                    : 's');
+                        }
+
+                        if ($pendentes > 0) {
+                            $resumoAssinaturas[] =
+                                $pendentes
+                                . ' pendente'
+                                . ($pendentes === 1
+                                    ? ''
+                                    : 's');
+                        }
 
                         ?>
 
@@ -304,11 +503,38 @@ $produtoCodigo = isset($viewPlano['produto_codigo'])
 
                             <td>
 
-                                <span class="limit-key">
-                                    <?= htmlspecialchars(
-                                        $chave,
-                                        ENT_QUOTES,
-                                        'UTF-8'
+                                <div class="client-cell">
+
+                                    <strong>
+                                        <?= $e(
+                                            $nomePrincipal
+                                        ) ?>
+                                    </strong>
+
+                                    <?php if (
+                                        $detalheCliente !== ''
+                                    ): ?>
+
+                                        <span>
+                                            <?= $e(
+                                                $detalheCliente
+                                            ) ?>
+                                        </span>
+
+                                    <?php endif; ?>
+
+                                </div>
+
+                            </td>
+
+
+                            <td>
+
+                                <span class="table-muted">
+                                    <?= $e(
+                                        $formatCnpj(
+                                            $cnpj
+                                        )
                                     ) ?>
                                 </span>
 
@@ -317,33 +543,37 @@ $produtoCodigo = isset($viewPlano['produto_codigo'])
 
                             <td>
 
-                                <strong class="limit-value">
-                                    <?= htmlspecialchars(
-                                        $valor,
-                                        ENT_QUOTES,
-                                        'UTF-8'
-                                    ) ?>
-                                </strong>
+                                <?php if (
+                                    $totalProdutos > 0
+                                ): ?>
 
-                            </td>
+                                    <div class="client-products">
 
+                                        <strong>
+                                            <?= $totalProdutos ?>
+                                            produto<?= $totalProdutos === 1
+                                                ? ''
+                                                : 's' ?>
+                                        </strong>
 
-                            <td>
+                                        <?php if (
+                                            $produtos !== ''
+                                        ): ?>
 
-                                <?php if ($unidade !== ''): ?>
+                                            <span>
+                                                <?= $e(
+                                                    $produtos
+                                                ) ?>
+                                            </span>
 
-                                    <span class="table-muted">
-                                        <?= htmlspecialchars(
-                                            $unidade,
-                                            ENT_QUOTES,
-                                            'UTF-8'
-                                        ) ?>
-                                    </span>
+                                        <?php endif; ?>
+
+                                    </div>
 
                                 <?php else: ?>
 
                                     <span class="table-muted">
-                                        —
+                                        Nenhum
                                     </span>
 
                                 <?php endif; ?>
@@ -353,41 +583,49 @@ $produtoCodigo = isset($viewPlano['produto_codigo'])
 
                             <td>
 
-                                <div class="table-actions">
+                                <?php if (
+                                    $totalAssinaturas > 0
+                                ): ?>
 
-                                    <a
-                                        href="<?= htmlspecialchars(
-                                            $viewAppUrl
-                                            . '/planos/'
-                                            . $planoId
-                                            . '/limites/'
-                                            . $limiteId
-                                            . '/editar',
-                                            ENT_QUOTES,
-                                            'UTF-8'
-                                        ) ?>"
-                                        class="table-action"
-                                    >
-                                        Editar
-                                    </a>
+                                    <div class="subscription-summary">
 
-                                    <a
-                                        href="<?= htmlspecialchars(
-                                            $viewAppUrl
-                                            . '/planos/'
-                                            . $planoId
-                                            . '/limites/'
-                                            . $limiteId
-                                            . '/remover',
-                                            ENT_QUOTES,
-                                            'UTF-8'
-                                        ) ?>"
-                                        class="table-action table-action-danger"
-                                    >
-                                        Remover
-                                    </a>
+                                        <?php foreach (
+                                            $resumoAssinaturas
+                                            as $item
+                                        ): ?>
 
-                                </div>
+                                            <span>
+                                                <?= $e(
+                                                    $item
+                                                ) ?>
+                                            </span>
+
+                                        <?php endforeach; ?>
+
+                                    </div>
+
+                                <?php else: ?>
+
+                                    <span class="table-muted">
+                                        Nenhuma
+                                    </span>
+
+                                <?php endif; ?>
+
+                            </td>
+
+
+                            <td>
+
+                                <span
+                                    class="client-state <?= $e(
+                                        $statusClass
+                                    ) ?>"
+                                >
+                                    <?= $e(
+                                        $statusLabel
+                                    ) ?>
+                                </span>
 
                             </td>
 

@@ -126,6 +126,283 @@
     color: #8fa0b7;
 }
 
+/* ============================================================
+   CLIENTE - CONTEXTO DE EDIÇÃO
+============================================================ */
+
+.client-edit-context {
+    margin-bottom: 22px;
+    padding: 16px 18px;
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+
+    background: rgba(255, 255, 255, 0.006);
+}
+
+.client-edit-context>span {
+    display: block;
+    margin-bottom: 5px;
+
+    color: var(--color-text-secondary);
+
+    font-size: 10px;
+    font-weight: 400;
+}
+
+.client-edit-context strong {
+    color: var(--color-text);
+
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.client-edit-context p {
+    margin: 6px 0 0;
+
+    color: var(--color-text-secondary);
+
+    font-size: 11px;
+    font-weight: 400;
+}
+
+/* ============================================================
+   CLIENTE - FICHA
+============================================================ */
+
+.page-heading-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+
+/* ============================================================
+   CABEÇALHO DA EMPRESA
+============================================================ */
+
+.client-profile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+
+    margin-bottom: 22px;
+    padding: 20px 22px;
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+
+    background: var(--color-surface);
+}
+
+.client-profile-identity {
+    min-width: 0;
+}
+
+.client-profile-label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: var(--color-text-secondary);
+
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.client-profile-identity h2 {
+    margin: 0;
+
+    color: var(--color-text);
+
+    font-size: 19px;
+    font-weight: 600;
+}
+
+.client-profile-identity p {
+    margin: 5px 0 0;
+
+    color: var(--color-text-secondary);
+
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.client-profile-status {
+    flex: 0 0 auto;
+
+    text-align: right;
+}
+
+.client-profile-status>span {
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: var(--color-text-secondary);
+
+    font-size: 10px;
+    font-weight: 400;
+}
+
+
+/* ============================================================
+   GRID DE INFORMAÇÕES
+============================================================ */
+
+.client-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 16px;
+}
+
+.client-detail-panel {
+    min-width: 0;
+
+    padding: 20px 22px;
+
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+
+    background: var(--color-surface);
+}
+
+.client-detail-panel header {
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+
+    border-bottom: 1px solid var(--color-border);
+}
+
+.client-detail-panel header>span {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: var(--color-text-secondary);
+
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.client-detail-panel header h2 {
+    margin: 0;
+
+    color: var(--color-text);
+
+    font-size: 14px;
+    font-weight: 600;
+}
+
+
+/* ============================================================
+   LISTA DE DADOS
+============================================================ */
+
+.client-detail-list {
+    margin: 0;
+}
+
+.client-detail-list>div {
+    display: grid;
+    grid-template-columns: 140px minmax(0, 1fr);
+
+    gap: 18px;
+
+    padding: 11px 0;
+
+    border-bottom: 1px solid rgba(255, 255, 255, 0.045);
+}
+
+.client-detail-list>div:first-child {
+    padding-top: 0;
+}
+
+.client-detail-list>div:last-child {
+    padding-bottom: 0;
+
+    border-bottom: 0;
+}
+
+.client-detail-list dt {
+    color: var(--color-text-secondary);
+
+    font-size: 11px;
+    font-weight: 400;
+}
+
+.client-detail-list dd {
+    min-width: 0;
+    margin: 0;
+
+    color: var(--color-text);
+
+    font-size: 12px;
+    font-weight: 500;
+
+    overflow-wrap: anywhere;
+}
+
+.client-slug {
+    font-family:
+        "SFMono-Regular",
+        Consolas,
+        "Liberation Mono",
+        monospace;
+
+    color: var(--color-text);
+    background: transparent;
+
+    font-size: 11px;
+    font-weight: 400;
+}
+
+
+/* ============================================================
+   RESPONSIVIDADE
+============================================================ */
+
+@media (max-width: 900px) {
+    .client-detail-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .page-heading-actions {
+        width: 100%;
+
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .page-heading-actions .button-primary,
+    .page-heading-actions .button-secondary {
+        justify-content: center;
+    }
+
+    .client-profile-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .client-profile-status {
+        text-align: left;
+    }
+
+    .client-detail-list>div {
+        grid-template-columns: 1fr;
+
+        gap: 5px;
+    }
+}
+
 @media (max-width: 900px) {
     .client-summary {
         grid-template-columns: repeat(2, 1fr);
