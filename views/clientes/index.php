@@ -593,6 +593,17 @@ $formatCnpj = static function (
                                                     $viewAppUrl
                                                         . '/clientes/'
                                                         . $clienteId
+                                                        . '/responsaveis'
+                                                ) ?>"
+                                        class="table-action">
+                                        Responsáveis
+                                    </a>
+
+                                    <a
+                                        href="<?= $e(
+                                                    $viewAppUrl
+                                                        . '/clientes/'
+                                                        . $clienteId
                                                         . '/editar'
                                                 ) ?>"
                                         class="table-action">

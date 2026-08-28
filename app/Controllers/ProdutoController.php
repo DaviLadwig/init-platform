@@ -11,9 +11,16 @@ use App\Core\Session;
 use App\Repositories\AuditLogRepository;
 use App\Repositories\ProdutoRepository;
 use App\Services\ProdutoService;
+use RuntimeException;
 
 final class ProdutoController
 {
+    private const ACTIVE_MENU = 'produtos';
+
+    private const PAGE_STYLES = [
+        'produtos.css',
+    ];
+
     private ProdutoService $service;
 
     public function __construct()
@@ -24,50 +31,29 @@ final class ProdutoController
         );
     }
 
-    /**
-     * Lista os produtos.
-     */
     public function index(): void
     {
         $produtos = $this->service->listar();
 
-        $success = Session::get('_flash_success');
-
-        if (is_string($success)) {
-            Session::remove('_flash_success');
-        } else {
-            $success = null;
-        }
-
-        $error = Session::get('_flash_error');
-
-        if (is_string($error)) {
-            Session::remove('_flash_error');
-        } else {
-            $error = null;
-        }
-
         $this->render(
             'produtos/index.php',
             'Produtos',
-            'produtos',
+            self::ACTIVE_MENU,
             [
                 'produtos' => $produtos,
-                'success' => $success,
-                'error' => $error,
+                'success' => $this->consumeFlash('_flash_success'),
+                'error' => $this->consumeFlash('_flash_error'),
+                'pageStyles' => self::PAGE_STYLES,
             ]
         );
     }
 
-    /**
-     * Exibe o formulário de cadastro.
-     */
     public function create(): void
     {
         $this->render(
             'produtos/create.php',
             'Novo produto',
-            'produtos',
+            self::ACTIVE_MENU,
             [
                 'errors' => [],
                 'formData' => [
@@ -76,13 +62,11 @@ final class ProdutoController
                     'slug' => '',
                     'descricao' => '',
                 ],
+                'pageStyles' => self::PAGE_STYLES,
             ]
         );
     }
 
-    /**
-     * Processa o cadastro.
-     */
     public function store(): void
     {
         $this->enforceCsrf();
@@ -102,7 +86,7 @@ final class ProdutoController
             $this->render(
                 'produtos/create.php',
                 'Novo produto',
-                'produtos',
+                self::ACTIVE_MENU,
                 [
                     'errors' => is_array($result['errors'] ?? null)
                         ? $result['errors']
@@ -110,6 +94,7 @@ final class ProdutoController
                     'formData' => is_array($result['data'] ?? null)
                         ? $result['data']
                         : [],
+                    'pageStyles' => self::PAGE_STYLES,
                 ]
             );
 
@@ -121,22 +106,13 @@ final class ProdutoController
             'Produto cadastrado com sucesso.'
         );
 
-        $this->redirect(
-            '/produtos',
-            303
-        );
+        $this->redirect('/produtos', 303);
     }
 
-    /**
-     * Exibe o formulário de edição.
-     */
     public function edit(string $id): void
     {
         $produtoId = $this->validateId($id);
-
-        $produto = $this->service->buscar(
-            $produtoId
-        );
+        $produto = $this->service->buscar($produtoId);
 
         if ($produto === null) {
             throw new HttpException(
@@ -148,39 +124,24 @@ final class ProdutoController
         $this->render(
             'produtos/edit.php',
             'Editar produto',
-            'produtos',
+            self::ACTIVE_MENU,
             [
                 'produtoId' => $produtoId,
                 'errors' => [],
                 'formData' => [
-                    'codigo' => isset($produto['codigo'])
-                        && is_string($produto['codigo'])
-                        ? $produto['codigo']
-                        : '',
-                    'nome' => isset($produto['nome'])
-                        && is_string($produto['nome'])
-                        ? $produto['nome']
-                        : '',
-                    'slug' => isset($produto['slug'])
-                        && is_string($produto['slug'])
-                        ? $produto['slug']
-                        : '',
-                    'descricao' => isset($produto['descricao'])
-                        && is_string($produto['descricao'])
-                        ? $produto['descricao']
-                        : '',
+                    'codigo' => $this->stringValue($produto, 'codigo'),
+                    'nome' => $this->stringValue($produto, 'nome'),
+                    'slug' => $this->stringValue($produto, 'slug'),
+                    'descricao' => $this->stringValue($produto, 'descricao'),
                 ],
+                'pageStyles' => self::PAGE_STYLES,
             ]
         );
     }
 
-    /**
-     * Processa a edição.
-     */
     public function update(string $id): void
     {
         $produtoId = $this->validateId($id);
-
         $this->enforceCsrf();
 
         $context = $this->requestContext();
@@ -206,7 +167,7 @@ final class ProdutoController
             $this->render(
                 'produtos/edit.php',
                 'Editar produto',
-                'produtos',
+                self::ACTIVE_MENU,
                 [
                     'produtoId' => $produtoId,
                     'errors' => is_array($result['errors'] ?? null)
@@ -215,6 +176,7 @@ final class ProdutoController
                     'formData' => is_array($result['data'] ?? null)
                         ? $result['data']
                         : [],
+                    'pageStyles' => self::PAGE_STYLES,
                 ]
             );
 
@@ -226,19 +188,12 @@ final class ProdutoController
             'Produto atualizado com sucesso.'
         );
 
-        $this->redirect(
-            '/produtos',
-            303
-        );
+        $this->redirect('/produtos', 303);
     }
 
-    /**
-     * Ativa um produto.
-     */
     public function activate(string $id): void
     {
         $produtoId = $this->validateId($id);
-
         $this->enforceCsrf();
 
         $context = $this->requestContext();
@@ -254,13 +209,9 @@ final class ProdutoController
         $this->handleStatusResult($result);
     }
 
-    /**
-     * Desativa um produto.
-     */
     public function deactivate(string $id): void
     {
         $produtoId = $this->validateId($id);
-
         $this->enforceCsrf();
 
         $context = $this->requestContext();
@@ -276,9 +227,6 @@ final class ProdutoController
         $this->handleStatusResult($result);
     }
 
-    /**
-     * Trata o resultado das operações de status.
-     */
     private function handleStatusResult(array $result): never
     {
         if (($result['not_found'] ?? false) === true) {
@@ -305,15 +253,28 @@ final class ProdutoController
             );
         }
 
-        $this->redirect(
-            '/produtos',
-            303
-        );
+        $this->redirect('/produtos', 303);
     }
 
-    /**
-     * Valida o token CSRF das operações POST.
-     */
+    private function consumeFlash(string $key): ?string
+    {
+        $value = Session::get($key);
+        Session::remove($key);
+
+        return is_string($value)
+            ? $value
+            : null;
+    }
+
+    private function stringValue(array $source, string $key): string
+    {
+        $value = $source[$key] ?? null;
+
+        return is_string($value)
+            ? $value
+            : '';
+    }
+
     private function enforceCsrf(): void
     {
         $token = $_POST['_token'] ?? null;
@@ -325,38 +286,38 @@ final class ProdutoController
         );
     }
 
-    /**
-     * Retorna o contexto seguro necessário para auditoria.
-     *
-     * @return array{
-     *     usuario_id: int,
-     *     ip: ?string,
-     *     user_agent: ?string
-     * }
-     */
     private function requestContext(): array
     {
         $auth = Session::get('auth');
 
-        $usuarioId = is_array($auth)
-            && isset($auth['user_id'])
-            && is_int($auth['user_id'])
-            ? $auth['user_id']
-            : 0;
-
-        if ($usuarioId <= 0) {
-            throw new \RuntimeException(
+        if (!is_array($auth)) {
+            throw new RuntimeException(
                 'Usuário autenticado não identificado.'
             );
         }
 
-        /*
-         * Por enquanto usamos somente REMOTE_ADDR.
-         * Não confiamos em X-Forwarded-For sem proxy confiável configurado.
-         */
+        $rawUserId = $auth['user_id'] ?? null;
+
+        if (is_int($rawUserId)) {
+            $usuarioId = $rawUserId;
+        } elseif (is_string($rawUserId) && ctype_digit($rawUserId)) {
+            $usuarioId = (int) $rawUserId;
+        } else {
+            $usuarioId = 0;
+        }
+
+        if ($usuarioId <= 0) {
+            throw new RuntimeException(
+                'Usuário autenticado não identificado.'
+            );
+        }
+
         $ip = $_SERVER['REMOTE_ADDR'] ?? null;
 
-        if (!is_string($ip)) {
+        if (
+            !is_string($ip)
+            || filter_var($ip, FILTER_VALIDATE_IP) === false
+        ) {
             $ip = null;
         }
 
@@ -380,27 +341,28 @@ final class ProdutoController
         ];
     }
 
-    /**
-     * Valida o ID recebido pela rota.
-     */
     private function validateId(string $id): int
     {
-        if (
-            !ctype_digit($id)
-            || (int) $id <= 0
-        ) {
+        $validated = filter_var(
+            $id,
+            FILTER_VALIDATE_INT,
+            [
+                'options' => [
+                    'min_range' => 1,
+                ],
+            ]
+        );
+
+        if ($validated === false) {
             throw new HttpException(
                 404,
                 'Produto não encontrado.'
             );
         }
 
-        return (int) $id;
+        return $validated;
     }
 
-    /**
-     * Renderiza uma view dentro do layout principal.
-     */
     private function render(
         string $view,
         string $title,
@@ -438,10 +400,7 @@ final class ProdutoController
             '/'
         );
 
-        extract(
-            $data,
-            EXTR_SKIP
-        );
+        extract($data, EXTR_SKIP);
 
         ob_start();
 
@@ -466,9 +425,6 @@ final class ProdutoController
             . 'main.php';
     }
 
-    /**
-     * Redirecionamento interno controlado.
-     */
     private function redirect(
         string $path,
         int $statusCode = 302
@@ -478,16 +434,10 @@ final class ProdutoController
             '/'
         );
 
-        $path = '/'
-            . ltrim(
-                $path,
-                '/'
-            );
+        $path = '/' . ltrim($path, '/');
 
         header(
-            'Location: '
-                . $appUrl
-                . $path,
+            'Location: ' . $appUrl . $path,
             true,
             $statusCode
         );

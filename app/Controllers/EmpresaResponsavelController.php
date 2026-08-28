@@ -16,11 +16,20 @@ use RuntimeException;
 
 final class EmpresaResponsavelController
 {
-    private const PAGE_STYLES = [
+    /*
+     * Propriedades da interface.
+     *
+     * Mantidas como propriedades tipadas em vez de constantes
+     * para evitar falsos positivos do Intelephense com self::.
+     */
+    private string $activeMenu = 'clientes';
+
+    private array $pageStyles = [
         'clientes.css',
+        'responsaveis.css',
     ];
 
-    private const FORM_FIELDS = [
+    private array $formFields = [
         'nome',
         'email',
         'telefone',
@@ -47,7 +56,8 @@ final class EmpresaResponsavelController
         string $id
     ): void {
         $empresaId = $this->validateId(
-            $id
+            $id,
+            'Cliente não encontrado.'
         );
 
         $result = $this->service->listar(
@@ -64,7 +74,7 @@ final class EmpresaResponsavelController
         $this->render(
             'clientes/responsaveis/index.php',
             'Responsáveis',
-            'clientes',
+            $this->activeMenu,
             [
                 'empresa' =>
                 $result['empresa'],
@@ -83,19 +93,20 @@ final class EmpresaResponsavelController
                 ),
 
                 'pageStyles' =>
-                self::PAGE_STYLES,
+                $this->pageStyles,
             ]
         );
     }
 
     /**
-     * Exibe cadastro.
+     * Formulário de cadastro.
      */
     public function create(
         string $id
     ): void {
         $empresaId = $this->validateId(
-            $id
+            $id,
+            'Cliente não encontrado.'
         );
 
         $empresa =
@@ -119,13 +130,14 @@ final class EmpresaResponsavelController
     }
 
     /**
-     * Processa cadastro.
+     * Cadastro.
      */
     public function store(
         string $id
     ): void {
         $empresaId = $this->validateId(
-            $id
+            $id,
+            'Cliente não encontrado.'
         );
 
         $this->enforceCsrf();
@@ -199,6 +211,308 @@ final class EmpresaResponsavelController
         );
     }
 
+    /**
+     * Formulário de edição.
+     */
+    public function edit(
+        string $id,
+        string $responsavelId
+    ): void {
+        $empresaId = $this->validateId(
+            $id,
+            'Cliente não encontrado.'
+        );
+
+        $responsavelIdInt =
+            $this->validateId(
+                $responsavelId,
+                'Responsável não encontrado.'
+            );
+
+        $empresa =
+            $this->service->buscarEmpresa(
+                $empresaId
+            );
+
+        if ($empresa === null) {
+            throw new HttpException(
+                404,
+                'Cliente não encontrado.'
+            );
+        }
+
+        /*
+         * Busca vinculada à empresa.
+         *
+         * Se o responsável pertencer a outra
+         * empresa, retorna 404.
+         */
+        $responsavel =
+            $this->service
+            ->buscarResponsavel(
+                $empresaId,
+                $responsavelIdInt
+            );
+
+        if ($responsavel === null) {
+            throw new HttpException(
+                404,
+                'Responsável não encontrado.'
+            );
+        }
+
+        $this->renderEditForm(
+            $empresaId,
+            $responsavelIdInt,
+            $empresa,
+            [],
+            $this->responsavelToFormData(
+                $responsavel
+            )
+        );
+    }
+
+    /**
+     * Processa edição.
+     */
+    public function update(
+        string $id,
+        string $responsavelId
+    ): void {
+        $empresaId = $this->validateId(
+            $id,
+            'Cliente não encontrado.'
+        );
+
+        $responsavelIdInt =
+            $this->validateId(
+                $responsavelId,
+                'Responsável não encontrado.'
+            );
+
+        $this->enforceCsrf();
+
+        $context =
+            $this->requestContext();
+
+        $result =
+            $this->service->editar(
+                $empresaId,
+                $responsavelIdInt,
+                $this->formInput(
+                    $_POST
+                ),
+                $context['usuario_id'],
+                $context['ip'],
+                $context['user_agent']
+            );
+
+        if (
+            ($result['not_found'] ?? false)
+            === true
+        ) {
+            throw new HttpException(
+                404,
+                'Responsável não encontrado.'
+            );
+        }
+
+        if (
+            ($result['success'] ?? false)
+            !== true
+        ) {
+            $empresa =
+                $this->service->buscarEmpresa(
+                    $empresaId
+                );
+
+            $responsavel =
+                $this->service
+                ->buscarResponsavel(
+                    $empresaId,
+                    $responsavelIdInt
+                );
+
+            if (
+                $empresa === null
+                || $responsavel === null
+            ) {
+                throw new HttpException(
+                    404,
+                    'Responsável não encontrado.'
+                );
+            }
+
+            $this->renderEditForm(
+                $empresaId,
+                $responsavelIdInt,
+                $empresa,
+                $this->resultErrors(
+                    $result
+                ),
+                $this->resultFormData(
+                    $result
+                ),
+                422
+            );
+
+            return;
+        }
+
+        Session::set(
+            '_flash_success',
+            'Responsável atualizado com sucesso.'
+        );
+
+        $this->redirect(
+            '/clientes/'
+                . $empresaId
+                . '/responsaveis',
+            303
+        );
+    }
+
+
+    /**
+     * Ativa um responsável.
+     */
+    public function activate(
+        string $id,
+        string $responsavelId
+    ): void {
+        $empresaId = $this->validateId(
+            $id,
+            'Cliente não encontrado.'
+        );
+
+        $responsavelIdInt = $this->validateId(
+            $responsavelId,
+            'Responsável não encontrado.'
+        );
+
+        $this->enforceCsrf();
+
+        $context = $this->requestContext();
+
+        $result = $this->service->ativar(
+            $empresaId,
+            $responsavelIdInt,
+            $context['usuario_id'],
+            $context['ip'],
+            $context['user_agent']
+        );
+
+        if (($result['not_found'] ?? false) === true) {
+            throw new HttpException(
+                404,
+                'Responsável não encontrado.'
+            );
+        }
+
+        if (($result['success'] ?? false) !== true) {
+            Session::set(
+                '_flash_error',
+                $this->firstResultError(
+                    $result,
+                    'Não foi possível ativar o responsável.'
+                )
+            );
+
+            $this->redirect(
+                '/clientes/'
+                    . $empresaId
+                    . '/responsaveis',
+                303
+            );
+        }
+
+        $changed = ($result['changed'] ?? false) === true;
+
+        Session::set(
+            '_flash_success',
+            $changed
+                ? 'Responsável ativado com sucesso.'
+                : 'O responsável já estava ativo.'
+        );
+
+        $this->redirect(
+            '/clientes/'
+                . $empresaId
+                . '/responsaveis',
+            303
+        );
+    }
+
+    /**
+     * Desativa um responsável.
+     */
+    public function deactivate(
+        string $id,
+        string $responsavelId
+    ): void {
+        $empresaId = $this->validateId(
+            $id,
+            'Cliente não encontrado.'
+        );
+
+        $responsavelIdInt = $this->validateId(
+            $responsavelId,
+            'Responsável não encontrado.'
+        );
+
+        $this->enforceCsrf();
+
+        $context = $this->requestContext();
+
+        $result = $this->service->desativar(
+            $empresaId,
+            $responsavelIdInt,
+            $context['usuario_id'],
+            $context['ip'],
+            $context['user_agent']
+        );
+
+        if (($result['not_found'] ?? false) === true) {
+            throw new HttpException(
+                404,
+                'Responsável não encontrado.'
+            );
+        }
+
+        if (($result['success'] ?? false) !== true) {
+            Session::set(
+                '_flash_error',
+                $this->firstResultError(
+                    $result,
+                    'Não foi possível desativar o responsável.'
+                )
+            );
+
+            $this->redirect(
+                '/clientes/'
+                    . $empresaId
+                    . '/responsaveis',
+                303
+            );
+        }
+
+        $changed = ($result['changed'] ?? false) === true;
+
+        Session::set(
+            '_flash_success',
+            $changed
+                ? 'Responsável desativado com sucesso.'
+                : 'O responsável já estava inativo.'
+        );
+
+        $this->redirect(
+            '/clientes/'
+                . $empresaId
+                . '/responsaveis',
+            303
+        );
+    }
+
     private function renderCreateForm(
         int $empresaId,
         array $empresa,
@@ -215,7 +529,7 @@ final class EmpresaResponsavelController
         $this->render(
             'clientes/responsaveis/create.php',
             'Novo responsável',
-            'clientes',
+            $this->activeMenu,
             [
                 'empresaId' =>
                 $empresaId,
@@ -230,13 +544,56 @@ final class EmpresaResponsavelController
                 $formData,
 
                 'pageStyles' =>
-                self::PAGE_STYLES,
+                $this->pageStyles,
+            ]
+        );
+    }
+
+    private function renderEditForm(
+        int $empresaId,
+        int $responsavelId,
+        array $empresa,
+        array $errors,
+        array $formData,
+        int $statusCode = 200
+    ): void {
+        if ($statusCode !== 200) {
+            http_response_code(
+                $statusCode
+            );
+        }
+
+        $this->render(
+            'clientes/responsaveis/edit.php',
+            'Editar responsável',
+            $this->activeMenu,
+            [
+                'empresaId' =>
+                $empresaId,
+
+                'responsavelId' =>
+                $responsavelId,
+
+                'empresa' =>
+                $empresa,
+
+                'errors' =>
+                $errors,
+
+                'formData' =>
+                $formData,
+
+                'pageStyles' =>
+                $this->pageStyles,
             ]
         );
     }
 
     /**
-     * Whitelist dos campos recebidos.
+     * Whitelist dos campos aceitos.
+     *
+     * empresa_id, ativo e qualquer outro
+     * campo enviado manualmente são ignorados.
      */
     private function formInput(
         array $input
@@ -244,8 +601,7 @@ final class EmpresaResponsavelController
         $data = [];
 
         foreach (
-            self::FORM_FIELDS
-            as $field
+            $this->formFields as $field
         ) {
             $value =
                 $input[$field]
@@ -269,6 +625,66 @@ final class EmpresaResponsavelController
             'cargo' => '',
             'principal' => '',
         ];
+    }
+
+    private function responsavelToFormData(
+        array $responsavel
+    ): array {
+        return [
+            'nome' =>
+            $this->stringValue(
+                $responsavel,
+                'nome'
+            ),
+
+            'email' =>
+            $this->stringValue(
+                $responsavel,
+                'email'
+            ),
+
+            'telefone' =>
+            $this->stringValue(
+                $responsavel,
+                'telefone'
+            ),
+
+            'cargo' =>
+            $this->stringValue(
+                $responsavel,
+                'cargo'
+            ),
+
+            'principal' =>
+            $this->boolValue(
+                $responsavel['principal'] ?? false
+            )
+                ? '1'
+                : '',
+        ];
+    }
+
+
+    private function firstResultError(
+        array $result,
+        string $fallback
+    ): string {
+        $errors = $result['errors'] ?? null;
+
+        if (!is_array($errors)) {
+            return $fallback;
+        }
+
+        foreach ($errors as $message) {
+            if (
+                is_string($message)
+                && $message !== ''
+            ) {
+                return $message;
+            }
+        }
+
+        return $fallback;
     }
 
     private function resultErrors(
@@ -296,36 +712,28 @@ final class EmpresaResponsavelController
 
         return [
             'nome' =>
-            is_string(
-                $data['nome']
-                    ?? null
-            )
-                ? $data['nome']
-                : '',
+            $this->stringValue(
+                $data,
+                'nome'
+            ),
 
             'email' =>
-            is_string(
-                $data['email']
-                    ?? null
-            )
-                ? $data['email']
-                : '',
+            $this->stringValue(
+                $data,
+                'email'
+            ),
 
             'telefone' =>
-            is_string(
-                $data['telefone']
-                    ?? null
-            )
-                ? $data['telefone']
-                : '',
+            $this->stringValue(
+                $data,
+                'telefone'
+            ),
 
             'cargo' =>
-            is_string(
-                $data['cargo']
-                    ?? null
-            )
-                ? $data['cargo']
-                : '',
+            $this->stringValue(
+                $data,
+                'cargo'
+            ),
 
             'principal' => ($data['principal'] ?? false)
                 === true
@@ -334,8 +742,32 @@ final class EmpresaResponsavelController
         ];
     }
 
+    private function stringValue(
+        array $source,
+        string $key
+    ): string {
+        $value =
+            $source[$key]
+            ?? null;
+
+        return is_string($value)
+            ? $value
+            : '';
+    }
+
+    private function boolValue(
+        mixed $value
+    ): bool {
+        return $value === true
+            || $value === 1
+            || $value === '1'
+            || $value === 't'
+            || $value === 'true';
+    }
+
     private function validateId(
-        string $id
+        string $id,
+        string $message
     ): int {
         $validated = filter_var(
             $id,
@@ -350,7 +782,7 @@ final class EmpresaResponsavelController
         if ($validated === false) {
             throw new HttpException(
                 404,
-                'Cliente não encontrado.'
+                $message
             );
         }
 
@@ -423,6 +855,10 @@ final class EmpresaResponsavelController
             );
         }
 
+        /*
+         * Não utilizamos X-Forwarded-For
+         * até termos proxy confiável configurado.
+         */
         $ip =
             $_SERVER['REMOTE_ADDR']
             ?? null;

@@ -1,0 +1,78 @@
+/* ============================================================
+   RESPONSÁVEIS DO CLIENTE
+   Complementa clientes.css sem alterar o restante do módulo.
+============================================================ */
+
+.responsaveis-heading {
+    gap: 24px;
+}
+
+.responsaveis-heading-actions,
+.responsavel-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.responsaveis-heading-actions {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.responsaveis-context-bar {
+    margin-bottom: 24px;
+}
+
+.responsaveis-panel .data-panel-header {
+    min-height: 84px;
+}
+
+.responsaveis-table th:last-child,
+.responsaveis-table td:last-child {
+    min-width: 190px;
+}
+
+.responsavel-actions {
+    flex-wrap: wrap;
+}
+
+.responsavel-action-form {
+    margin: 0;
+}
+
+.responsavel-action-form button {
+    font: inherit;
+    cursor: pointer;
+}
+
+.responsavel-action-deactivate {
+    border-color: rgba(239, 68, 68, 0.24);
+    color: #f0a0a0;
+}
+
+.responsavel-action-deactivate:hover {
+    border-color: rgba(239, 68, 68, 0.38);
+    background: rgba(239, 68, 68, 0.07);
+}
+
+.responsavel-action-activate {
+    border-color: rgba(34, 197, 94, 0.24);
+    color: #80dba0;
+}
+
+.responsavel-action-activate:hover {
+    border-color: rgba(34, 197, 94, 0.38);
+    background: rgba(34, 197, 94, 0.07);
+}
+
+@media (max-width: 700px) {
+    .responsaveis-heading-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .responsaveis-heading-actions .button-primary,
+    .responsaveis-heading-actions .button-secondary {
+        flex: 1 1 180px;
+    }
+}

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 use App\Controllers\AuthController;
 use App\Controllers\ClienteController;
+use App\Controllers\EmpresaResponsavelController;
 use App\Controllers\HomeController;
 use App\Controllers\PlanoController;
 use App\Controllers\PlanoLimiteController;
 use App\Controllers\ProdutoController;
-
 use App\Middleware\AuthMiddleware;
 use App\Middleware\RoleMiddleware;
 
@@ -97,7 +97,6 @@ $router->get(
     ]
 );
 
-
 $router->get(
     '/produtos/novo',
     [
@@ -112,7 +111,6 @@ $router->get(
         ]),
     ]
 );
-
 
 $router->post(
     '/produtos',
@@ -129,7 +127,6 @@ $router->post(
     ]
 );
 
-
 $router->get(
     '/produtos/{id}/editar',
     [
@@ -144,7 +141,6 @@ $router->get(
         ]),
     ]
 );
-
 
 $router->post(
     '/produtos/{id}',
@@ -161,7 +157,6 @@ $router->post(
     ]
 );
 
-
 $router->post(
     '/produtos/{id}/ativar',
     [
@@ -176,7 +171,6 @@ $router->post(
         ]),
     ]
 );
-
 
 $router->post(
     '/produtos/{id}/desativar',
@@ -215,7 +209,6 @@ $router->get(
     ]
 );
 
-
 $router->get(
     '/planos/novo',
     [
@@ -230,7 +223,6 @@ $router->get(
         ]),
     ]
 );
-
 
 $router->post(
     '/planos',
@@ -247,7 +239,6 @@ $router->post(
     ]
 );
 
-
 $router->get(
     '/planos/{id}/editar',
     [
@@ -262,7 +253,6 @@ $router->get(
         ]),
     ]
 );
-
 
 $router->post(
     '/planos/{id}',
@@ -279,7 +269,6 @@ $router->post(
     ]
 );
 
-
 $router->post(
     '/planos/{id}/ativar',
     [
@@ -294,7 +283,6 @@ $router->post(
         ]),
     ]
 );
-
 
 $router->post(
     '/planos/{id}/desativar',
@@ -333,7 +321,6 @@ $router->get(
     ]
 );
 
-
 $router->get(
     '/planos/{id}/limites/novo',
     [
@@ -348,7 +335,6 @@ $router->get(
         ]),
     ]
 );
-
 
 $router->post(
     '/planos/{id}/limites',
@@ -365,7 +351,6 @@ $router->post(
     ]
 );
 
-
 $router->get(
     '/planos/{id}/limites/{limiteId}/editar',
     [
@@ -380,7 +365,6 @@ $router->get(
         ]),
     ]
 );
-
 
 $router->post(
     '/planos/{id}/limites/{limiteId}',
@@ -397,7 +381,6 @@ $router->post(
     ]
 );
 
-
 $router->get(
     '/planos/{id}/limites/{limiteId}/remover',
     [
@@ -412,7 +395,6 @@ $router->get(
         ]),
     ]
 );
-
 
 $router->post(
     '/planos/{id}/limites/{limiteId}/remover',
@@ -436,9 +418,6 @@ $router->post(
 |--------------------------------------------------------------------------
 */
 
-/*
- * Lista de clientes.
- */
 $router->get(
     '/clientes',
     [
@@ -454,10 +433,6 @@ $router->get(
     ]
 );
 
-
-/*
- * Formulário de cadastro.
- */
 $router->get(
     '/clientes/novo',
     [
@@ -473,10 +448,6 @@ $router->get(
     ]
 );
 
-
-/*
- * Cadastro de cliente.
- */
 $router->post(
     '/clientes',
     [
@@ -494,8 +465,128 @@ $router->post(
 
 
 /*
- * Formulário de edição.
- */
+|--------------------------------------------------------------------------
+| Responsáveis dos clientes
+|--------------------------------------------------------------------------
+|
+| As rotas mais específicas ficam antes das rotas genéricas
+| /clientes/{id}. Isso evita colisões no roteamento dinâmico.
+|
+*/
+
+$router->get(
+    '/clientes/{id}/responsaveis',
+    [
+        EmpresaResponsavelController::class,
+        'index',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+$router->get(
+    '/clientes/{id}/responsaveis/novo',
+    [
+        EmpresaResponsavelController::class,
+        'create',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+$router->post(
+    '/clientes/{id}/responsaveis',
+    [
+        EmpresaResponsavelController::class,
+        'store',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+$router->get(
+    '/clientes/{id}/responsaveis/{responsavelId}/editar',
+    [
+        EmpresaResponsavelController::class,
+        'edit',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+
+$router->post(
+    '/clientes/{id}/responsaveis/{responsavelId}/ativar',
+    [
+        EmpresaResponsavelController::class,
+        'activate',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+$router->post(
+    '/clientes/{id}/responsaveis/{responsavelId}/desativar',
+    [
+        EmpresaResponsavelController::class,
+        'deactivate',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+$router->post(
+    '/clientes/{id}/responsaveis/{responsavelId}',
+    [
+        EmpresaResponsavelController::class,
+        'update',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| Dados cadastrais do cliente
+|--------------------------------------------------------------------------
+*/
+
 $router->get(
     '/clientes/{id}/editar',
     [
@@ -511,15 +602,11 @@ $router->get(
     ]
 );
 
-
-/*
- * Atualização cadastral.
- */
-$router->post(
+$router->get(
     '/clientes/{id}',
     [
         ClienteController::class,
-        'update',
+        'show',
     ],
     [
         AuthMiddleware::class,
@@ -530,14 +617,11 @@ $router->post(
     ]
 );
 
-/*
- * Ficha cadastral do cliente.
- */
-$router->get(
+$router->post(
     '/clientes/{id}',
     [
         ClienteController::class,
-        'show',
+        'update',
     ],
     [
         AuthMiddleware::class,

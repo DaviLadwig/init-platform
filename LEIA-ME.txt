@@ -1,0 +1,33 @@
+FECHAMENTO - RESPONSÁVEIS DOS CLIENTES
+
+Arquivos para substituir/criar:
+
+1. app/Repositories/EmpresaResponsavelRepository.php
+2. app/Services/EmpresaResponsavelService.php
+3. app/Controllers/EmpresaResponsavelController.php
+4. routes/web.php
+5. views/clientes/responsaveis/index.php
+6. public/css/responsaveis.css
+7. database/migrations/003_empresa_responsavel_principal_unico.sql
+
+Regras finais:
+- Ativar/desativar somente por POST.
+- CSRF obrigatório.
+- SUPER_ADMIN nas rotas.
+- Responsável validado por id + empresa_id (IDOR).
+- Principal não pode ser desativado.
+- Responsável inativo não pode ser promovido a principal.
+- Status é alterado em transação, com lock da empresa.
+- Operações repetidas são idempotentes e não duplicam logs.
+- Logs de status registram somente empresa_id, principal e ativo.
+
+Ações de auditoria:
+- RESPONSAVEL_EMPRESA_ATIVADO
+- RESPONSAVEL_EMPRESA_DESATIVADO
+
+Teste recomendado:
+1. Desativar responsável comum ativo -> deve ficar Inativo.
+2. Ativar novamente -> deve ficar Ativo.
+3. Tentar desativar o principal -> deve bloquear e exibir erro.
+4. Desativar um comum e tentar marcá-lo principal pela edição -> deve bloquear.
+5. Conferir logs das ações de ativação/desativação.

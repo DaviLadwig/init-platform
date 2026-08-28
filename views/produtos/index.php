@@ -2,396 +2,270 @@
 
 declare(strict_types=1);
 
-$viewProdutos = isset($produtos)
-    && is_array($produtos)
-    ? $produtos
-    : [];
+$viewProdutos = isset($produtos) && is_array($produtos) ? $produtos : [];
+$viewAppUrl = isset($appUrl) && is_string($appUrl) ? rtrim($appUrl, '/') : '';
+$viewSuccess = isset($success) && is_string($success) ? $success : null;
+$viewError = isset($error) && is_string($error) ? $error : null;
+$viewCsrfToken = isset($csrfToken) && is_string($csrfToken) ? $csrfToken : '';
 
-$viewAppUrl = isset($appUrl)
-    && is_string($appUrl)
-    ? rtrim($appUrl, '/')
-    : '';
+$e = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 
-$viewSuccess = isset($success)
-    && is_string($success)
-    ? $success
-    : null;
+$stringValue = static function (array $source, string $key): string {
+    $value = $source[$key] ?? null;
+    return is_string($value) ? $value : '';
+};
 
-$viewError = isset($error)
-    && is_string($error)
-    ? $error
-    : null;
+$boolValue = static function (mixed $value): bool {
+    return $value === true
+        || $value === 1
+        || $value === '1'
+        || $value === 't'
+        || $value === 'true';
+};
 
-$viewCsrfToken = isset($csrfToken)
-    && is_string($csrfToken)
-    ? $csrfToken
-    : '';
+$totalProdutos = count($viewProdutos);
+$totalAtivos = 0;
+$totalPlanos = 0;
 
+foreach ($viewProdutos as $produtoResumo) {
+    if (!is_array($produtoResumo)) {
+        continue;
+    }
 
+    if ($boolValue($produtoResumo['ativo'] ?? false)) {
+        $totalAtivos++;
+    }
+
+    $totalPlanos += max(0, (int) ($produtoResumo['total_planos'] ?? 0));
+}
 ?>
 
-<section class="page-heading">
-
+<section class="page-heading products-heading">
     <div>
-
-        <span class="page-eyebrow">
-            Catálogo SaaS
-        </span>
-
-        <h1>
-            Produtos
-        </h1>
-
-        <p>
-            Produtos disponibilizados e administrados através da plataforma Init.
-        </p>
-
+        <span class="page-eyebrow">Catálogo SaaS</span>
+        <h1>Produtos</h1>
+        <p>Gerencie os produtos comercializados pela Init e acesse seus planos.</p>
     </div>
 
     <a
-        href="<?= htmlspecialchars(
-                    $viewAppUrl . '/planos/novo',
-                    ENT_QUOTES,
-                    'UTF-8'
-                ) ?>"
-        class="button-primary">
-        Novo plano
-    </a>
-
-    <a
-        href="<?= htmlspecialchars(
-                    $viewAppUrl . '/produtos/novo',
-                    ENT_QUOTES,
-                    'UTF-8'
-                ) ?>"
+        href="<?= $e($viewAppUrl . '/produtos/novo') ?>"
         class="button-primary">
         Novo produto
     </a>
-
 </section>
 
-
-<?php if (
-    $viewSuccess !== null
-    && $viewSuccess !== ''
-): ?>
-
-    <div
-        class="form-alert form-alert-success page-alert"
-        role="status">
-        <?= htmlspecialchars(
-            $viewSuccess,
-            ENT_QUOTES,
-            'UTF-8'
-        ) ?>
+<?php if ($viewSuccess !== null && $viewSuccess !== ''): ?>
+    <div class="form-alert form-alert-success page-alert" role="status">
+        <?= $e($viewSuccess) ?>
     </div>
-
 <?php endif; ?>
 
-<?php if (
-    $viewError !== null
-    && $viewError !== ''
-): ?>
-
-    <div
-        class="form-alert form-alert-error page-alert"
-        role="alert">
-        <?= htmlspecialchars(
-            $viewError,
-            ENT_QUOTES,
-            'UTF-8'
-        ) ?>
+<?php if ($viewError !== null && $viewError !== ''): ?>
+    <div class="form-alert form-alert-error page-alert" role="alert">
+        <?= $e($viewError) ?>
     </div>
-
 <?php endif; ?>
 
+<section class="products-overview" aria-label="Resumo do catálogo">
+    <div class="products-overview-item">
+        <span>Produtos cadastrados</span>
+        <strong><?= $totalProdutos ?></strong>
+    </div>
 
-<section class="data-panel">
+    <div class="products-overview-item">
+        <span>Produtos ativos</span>
+        <strong><?= $totalAtivos ?></strong>
+    </div>
 
-    <header class="data-panel-header">
+    <div class="products-overview-item">
+        <span>Planos cadastrados</span>
+        <strong><?= $totalPlanos ?></strong>
+    </div>
+</section>
 
+<section class="products-section">
+    <header class="products-section-header">
         <div>
-
-            <h2>
-                Produtos cadastrados
-            </h2>
-
-            <p>
-                <?= count($viewProdutos) ?>
-                produto<?= count($viewProdutos) === 1 ? '' : 's' ?>
-                na plataforma
-            </p>
-
+            <h2>Catálogo de produtos</h2>
+            <p>Administração comercial dos produtos SaaS disponíveis na plataforma.</p>
         </div>
-
     </header>
 
-
     <?php if ($viewProdutos === []): ?>
+        <div class="products-empty">
+            <h3>Nenhum produto cadastrado</h3>
+            <p>Cadastre o primeiro produto para começar a estruturar o catálogo SaaS.</p>
 
-        <div class="empty-state">
-
-            <h3>
-                Nenhum produto cadastrado
-            </h3>
-
-            <p>
-                Ainda não existem produtos SaaS registrados na plataforma.
-            </p>
-
+            <a
+                href="<?= $e($viewAppUrl . '/produtos/novo') ?>"
+                class="button-primary">
+                Cadastrar produto
+            </a>
         </div>
-
     <?php else: ?>
-
-        <div class="table-responsive">
-
-            <table class="data-table">
-
-                <thead>
-
-                    <tr>
-                        <th>Produto</th>
-                        <th>Código</th>
-                        <th>Slug</th>
-                        <th>Planos</th>
-                        <th>Status</th>
-                        <th>Ações</th>
-                    </tr>
-
-                </thead>
-
-                <tbody>
-
-                    <?php foreach ($viewProdutos as $produto): ?>
-
-                        <?php
-
-                        $nome = isset($produto['nome'])
-                            && is_string($produto['nome'])
-                            ? $produto['nome']
-                            : '';
-
-                        $codigo = isset($produto['codigo'])
-                            && is_string($produto['codigo'])
-                            ? $produto['codigo']
-                            : '';
-
-                        $slug = isset($produto['slug'])
-                            && is_string($produto['slug'])
-                            ? $produto['slug']
-                            : '';
-
-                        $descricao = isset($produto['descricao'])
-                            && is_string($produto['descricao'])
-                            ? $produto['descricao']
-                            : '';
-
-                        $ativo = isset($produto['ativo'])
-                            ? (bool) $produto['ativo']
-                            : false;
-
-                        $totalPlanos = isset($produto['total_planos'])
-                            ? (int) $produto['total_planos']
-                            : 0;
-
-                        ?>
-
+        <div class="products-table-shell">
+            <div class="table-responsive">
+                <table class="data-table products-table">
+                    <thead>
                         <tr>
+                            <th>Produto</th>
+                            <th>Código</th>
+                            <th>Planos</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
 
-                            <td>
+                    <tbody>
+                        <?php foreach ($viewProdutos as $produto): ?>
+                            <?php
+                            if (!is_array($produto)) {
+                                continue;
+                            }
 
-                                <div class="product-cell">
+                            $produtoId = isset($produto['id']) ? (int) $produto['id'] : 0;
 
-                                    <span class="product-mark">
-                                        <?= htmlspecialchars(
-                                            mb_strtoupper(
-                                                mb_substr(
-                                                    $nome,
-                                                    0,
-                                                    1,
-                                                    'UTF-8'
-                                                ),
-                                                'UTF-8'
-                                            ),
-                                            ENT_QUOTES,
-                                            'UTF-8'
-                                        ) ?>
+                            if ($produtoId <= 0) {
+                                continue;
+                            }
+
+                            $nome = $stringValue($produto, 'nome');
+                            $codigo = $stringValue($produto, 'codigo');
+                            $descricao = $stringValue($produto, 'descricao');
+                            $ativo = $boolValue($produto['ativo'] ?? false);
+                            $totalPlanosProduto = max(
+                                0,
+                                (int) ($produto['total_planos'] ?? 0)
+                            );
+
+                            $initial = $nome !== ''
+                                ? mb_strtoupper(
+                                    mb_substr($nome, 0, 1, 'UTF-8'),
+                                    'UTF-8'
+                                )
+                                : 'I';
+                            ?>
+
+                            <tr>
+                                <td>
+                                    <div class="product-cell">
+                                        <span class="product-mark" aria-hidden="true">
+                                            <?= $e($initial) ?>
+                                        </span>
+
+                                        <div class="product-info">
+                                            <strong><?= $e($nome) ?></strong>
+
+                                            <?php if ($descricao !== ''): ?>
+                                                <span><?= $e($descricao) ?></span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <code class="product-code"><?= $e($codigo) ?></code>
+                                </td>
+
+                                <td>
+                                    <div class="product-plan-summary">
+                                        <strong><?= $totalPlanosProduto ?></strong>
+                                        <span>
+                                            plano<?= $totalPlanosProduto === 1 ? '' : 's' ?>
+                                        </span>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <span
+                                        class="product-status <?= $ativo
+                                                                    ? 'product-status-active'
+                                                                    : 'product-status-inactive' ?>">
+                                        <?= $ativo ? 'Ativo' : 'Inativo' ?>
                                     </span>
+                                </td>
 
-                                    <div class="product-info">
-
-                                        <strong>
-                                            <?= htmlspecialchars(
-                                                $nome,
-                                                ENT_QUOTES,
-                                                'UTF-8'
-                                            ) ?>
-                                        </strong>
-
-                                        <?php if ($descricao !== ''): ?>
-
-                                            <span>
-                                                <?= htmlspecialchars(
-                                                    $descricao,
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                ) ?>
-                                            </span>
-
+                                <td>
+                                    <div class="product-actions">
+                                        <?php if ($totalPlanosProduto > 0): ?>
+                                            <a
+                                                href="<?= $e($viewAppUrl . '/planos') ?>"
+                                                class="product-action product-action-primary">
+                                                Ver planos
+                                            </a>
+                                        <?php elseif ($ativo): ?>
+                                            <a
+                                                href="<?= $e(
+                                                            $viewAppUrl
+                                                                . '/planos/novo?produto='
+                                                                . $produtoId
+                                                        ) ?>"
+                                                class="product-action product-action-primary">
+                                                Criar plano
+                                            </a>
                                         <?php endif; ?>
 
+                                        <a
+                                            href="<?= $e(
+                                                        $viewAppUrl
+                                                            . '/produtos/'
+                                                            . $produtoId
+                                                            . '/editar'
+                                                    ) ?>"
+                                            class="product-action">
+                                            Editar
+                                        </a>
+
+                                        <?php if ($ativo): ?>
+                                            <form
+                                                method="POST"
+                                                action="<?= $e(
+                                                            $viewAppUrl
+                                                                . '/produtos/'
+                                                                . $produtoId
+                                                                . '/desativar'
+                                                        ) ?>"
+                                                class="product-action-form">
+                                                <input
+                                                    type="hidden"
+                                                    name="_token"
+                                                    value="<?= $e($viewCsrfToken) ?>">
+
+                                                <button
+                                                    type="submit"
+                                                    class="product-action product-action-danger">
+                                                    Desativar
+                                                </button>
+                                            </form>
+                                        <?php else: ?>
+                                            <form
+                                                method="POST"
+                                                action="<?= $e(
+                                                            $viewAppUrl
+                                                                . '/produtos/'
+                                                                . $produtoId
+                                                                . '/ativar'
+                                                        ) ?>"
+                                                class="product-action-form">
+                                                <input
+                                                    type="hidden"
+                                                    name="_token"
+                                                    value="<?= $e($viewCsrfToken) ?>">
+
+                                                <button
+                                                    type="submit"
+                                                    class="product-action product-action-success">
+                                                    Ativar
+                                                </button>
+                                            </form>
+                                        <?php endif; ?>
                                     </div>
-
-                                </div>
-
-                            </td>
-
-
-                            <td>
-
-                                <span class="code-badge">
-                                    <?= htmlspecialchars(
-                                        $codigo,
-                                        ENT_QUOTES,
-                                        'UTF-8'
-                                    ) ?>
-                                </span>
-
-                            </td>
-
-
-                            <td>
-
-                                <span class="table-muted">
-                                    <?= htmlspecialchars(
-                                        $slug,
-                                        ENT_QUOTES,
-                                        'UTF-8'
-                                    ) ?>
-                                </span>
-
-                            </td>
-
-
-                            <td>
-                                <?= $totalPlanos ?>
-                            </td>
-
-
-                            <td>
-
-                                <?php if ($ativo): ?>
-
-                                    <span class="status-badge status-active">
-                                        Ativo
-                                    </span>
-
-                                <?php else: ?>
-
-                                    <span class="status-badge status-inactive">
-                                        Inativo
-                                    </span>
-
-                                <?php endif; ?>
-
-                            </td>
-
-                            <td>
-
-                                <div class="table-actions">
-
-                                    <a
-                                        href="<?= htmlspecialchars(
-                                                    $viewAppUrl
-                                                        . '/produtos/'
-                                                        . (int) $produto['id']
-                                                        . '/editar',
-                                                    ENT_QUOTES,
-                                                    'UTF-8'
-                                                ) ?>"
-                                        class="table-action">
-                                        Editar
-                                    </a>
-
-
-                                    <?php if ($ativo): ?>
-
-                                        <form
-                                            method="POST"
-                                            action="<?= htmlspecialchars(
-                                                        $viewAppUrl
-                                                            . '/produtos/'
-                                                            . (int) $produto['id']
-                                                            . '/desativar',
-                                                        ENT_QUOTES,
-                                                        'UTF-8'
-                                                    ) ?>"
-                                            class="table-action-form">
-
-                                            <input
-                                                type="hidden"
-                                                name="_token"
-                                                value="<?= htmlspecialchars(
-                                                            $viewCsrfToken,
-                                                            ENT_QUOTES,
-                                                            'UTF-8'
-                                                        ) ?>">
-
-                                            <button
-                                                type="submit"
-                                                class="table-action table-action-danger">
-                                                Desativar
-                                            </button>
-
-                                        </form>
-
-                                    <?php else: ?>
-
-                                        <form
-                                            method="POST"
-                                            action="<?= htmlspecialchars(
-                                                        $viewAppUrl
-                                                            . '/produtos/'
-                                                            . (int) $produto['id']
-                                                            . '/ativar',
-                                                        ENT_QUOTES,
-                                                        'UTF-8'
-                                                    ) ?>"
-                                            class="table-action-form">
-
-                                            <input
-                                                type="hidden"
-                                                name="_token"
-                                                value="<?= htmlspecialchars(
-                                                            $viewCsrfToken,
-                                                            ENT_QUOTES,
-                                                            'UTF-8'
-                                                        ) ?>">
-
-                                            <button
-                                                type="submit"
-                                                class="table-action table-action-activate">
-                                                Ativar
-                                            </button>
-
-                                        </form>
-
-                                    <?php endif; ?>
-
-                                </div>
-
-                            </td>
-
-                        </tr>
-
-                    <?php endforeach; ?>
-
-                </tbody>
-
-            </table>
-
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
-
     <?php endif; ?>
-
 </section>

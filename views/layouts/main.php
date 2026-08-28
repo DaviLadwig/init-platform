@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 /*
 |--------------------------------------------------------------------------
-| Variáveis da view
+| Dados recebidos pelo layout
 |--------------------------------------------------------------------------
 */
 
 $viewTitle = isset($title) && is_string($title)
     ? $title
     : 'Init SaaS Platform';
-
 
 $viewActiveMenu = isset($activeMenu) && is_string($activeMenu)
     ? $activeMenu
@@ -37,39 +36,52 @@ $viewUserRole = isset($userRole) && is_string($userRole)
     ? $userRole
     : '';
 
+$viewPageStyles = isset($pageStyles) && is_array($pageStyles)
+    ? $pageStyles
+    : [];
+
+
 /*
 |--------------------------------------------------------------------------
-| Escape
+| Helpers da view
 |--------------------------------------------------------------------------
 */
 
-$safeTitle = htmlspecialchars(
-    $viewTitle,
+$e = static fn(string $value): string => htmlspecialchars(
+    $value,
     ENT_QUOTES,
     'UTF-8'
 );
 
-$safeAppUrl = htmlspecialchars(
+$url = static function (string $path) use (
     $viewAppUrl,
-    ENT_QUOTES,
-    'UTF-8'
-);
+    $e
+): string {
+    $normalizedPath = '/' . ltrim($path, '/');
 
-$safeCsrfToken = htmlspecialchars(
-    $viewCsrfToken,
-    ENT_QUOTES,
-    'UTF-8'
-);
+    return $e(
+        $viewAppUrl . $normalizedPath
+    );
+};
 
-$safeUserName = htmlspecialchars(
-    $viewUserName,
-    ENT_QUOTES,
-    'UTF-8'
-);
+$navClass = static function (string $menu) use (
+    $viewActiveMenu
+): string {
+    return 'navigation-item'
+        . (
+            $viewActiveMenu === $menu
+            ? ' active'
+            : ''
+        );
+};
 
-$safeUserRole = htmlspecialchars(
-    $viewUserRole,
-    ENT_QUOTES,
+$userInitial = mb_strtoupper(
+    mb_substr(
+        $viewUserName,
+        0,
+        1,
+        'UTF-8'
+    ),
     'UTF-8'
 );
 
@@ -90,48 +102,32 @@ $safeUserRole = htmlspecialchars(
         content="noindex, nofollow">
 
     <title>
-        <?= $safeTitle ?> | Init SaaS Platform
+        <?= $e($viewTitle) ?> | Init SaaS Platform
     </title>
 
     <link
         rel="stylesheet"
-        href="<?= $safeAppUrl ?>/css/app.css">
-
-    <?php
-
-    $viewPageStyles = isset($pageStyles)
-        && is_array($pageStyles)
-        ? $pageStyles
-        : [];
-
-    ?>
-
-    <link
-        rel="stylesheet"
-        href="<?= htmlspecialchars(
-                    $safeAppUrl . '/css/app.css',
-                    ENT_QUOTES,
-                    'UTF-8'
-                ) ?>">
+        href="<?= $url('/css/app.css') ?>">
 
     <?php foreach ($viewPageStyles as $stylesheet): ?>
 
-        <?php if (
+        <?php
+
+        $stylesheetIsValid =
             is_string($stylesheet)
             && preg_match(
                 '/^[a-z0-9_-]+\.css$/',
                 $stylesheet
-            ) === 1
-        ): ?>
+            ) === 1;
+
+        ?>
+
+        <?php if ($stylesheetIsValid): ?>
 
             <link
                 rel="stylesheet"
-                href="<?= htmlspecialchars(
-                            $safeAppUrl
-                                . '/css/'
-                                . $stylesheet,
-                            ENT_QUOTES,
-                            'UTF-8'
+                href="<?= $url(
+                            '/css/' . $stylesheet
                         ) ?>">
 
         <?php endif; ?>
@@ -155,7 +151,7 @@ $safeUserRole = htmlspecialchars(
             <div class="sidebar-brand">
 
                 <a
-                    href="<?= $safeAppUrl ?>/"
+                    href="<?= $url('/') ?>"
                     class="brand-link"
                     aria-label="Init SaaS Platform">
 
@@ -184,6 +180,8 @@ $safeUserRole = htmlspecialchars(
                 class="sidebar-navigation"
                 aria-label="Navegação principal">
 
+                <!-- VISÃO GERAL -->
+
                 <div class="navigation-section">
 
                     <span class="navigation-label">
@@ -191,8 +189,10 @@ $safeUserRole = htmlspecialchars(
                     </span>
 
                     <a
-                        href="<?= $safeAppUrl ?>/"
-                        class="navigation-item <?= $viewActiveMenu === 'dashboard' ? 'active' : '' ?>">
+                        href="<?= $url('/') ?>"
+                        class="<?= $e(
+                                    $navClass('dashboard')
+                                ) ?>">
 
                         <span class="navigation-icon">
 
@@ -214,15 +214,21 @@ $safeUserRole = htmlspecialchars(
                 </div>
 
 
+                <!-- COMERCIAL -->
+
                 <div class="navigation-section">
 
                     <span class="navigation-label">
                         Comercial
                     </span>
 
+                    <!-- CLIENTES -->
+
                     <a
-                        href="<?= $safeAppUrl ?>/produtos"
-                        class="navigation-item <?= $viewActiveMenu === 'produtos' ? 'active' : '' ?>">
+                        href="<?= $url('/clientes') ?>"
+                        class="<?= $e(
+                                    $navClass('clientes')
+                                ) ?>">
 
                         <span class="navigation-icon">
 
@@ -239,76 +245,88 @@ $safeUserRole = htmlspecialchars(
                             Clientes
                         </span>
 
-
-                        <a
-                            href="#"
-                            class="navigation-item navigation-item-disabled"
-                            aria-disabled="true">
-
-                            <span class="navigation-icon">
-
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    aria-hidden="true">
-                                    <path
-                                        d="M4 5h16v4H4V5Zm0 6h7v8H4v-8Zm9 0h7v8h-7v-8Z" />
-                                </svg>
-
-                            </span>
-
-                            <span>
-                                Produtos
-                            </span>
-
-                        </a>
+                    </a>
 
 
-                        <a
-                            href="<?= $safeAppUrl ?>/planos"
-                            class="navigation-item <?= $viewActiveMenu === 'planos' ? 'active' : '' ?>">
+                    <!-- PRODUTOS -->
 
-                            <span class="navigation-icon">
+                    <a
+                        href="<?= $url('/produtos') ?>"
+                        class="<?= $e(
+                                    $navClass('produtos')
+                                ) ?>">
 
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    aria-hidden="true">
-                                    <path
-                                        d="M3 6h18v12H3V6Zm2 2v8h14V8H5Zm2 2h6v2H7v-2Z" />
-                                </svg>
+                        <span class="navigation-icon">
 
-                            </span>
+                            <svg
+                                viewBox="0 0 24 24"
+                                aria-hidden="true">
+                                <path
+                                    d="M4 5h16v4H4V5zm0 6h7v8H4v-8z" />
+                            </svg>
 
-                            <span>
-                                Planos
-                            </span>
+                        </span>
 
-                        </a>
+                        <span>
+                            Produtos
+                        </span>
+
+                    </a>
 
 
-                        <a
-                            href="#"
-                            class="navigation-item navigation-item-disabled"
-                            aria-disabled="true">
+                    <!-- PLANOS -->
 
-                            <span class="navigation-icon">
+                    <a
+                        href="<?= $url('/planos') ?>"
+                        class="<?= $e(
+                                    $navClass('planos')
+                                ) ?>">
 
-                                <svg
-                                    viewBox="0 0 24 24"
-                                    aria-hidden="true">
-                                    <path
-                                        d="M7 2h10v3h3v17H4V5h3V2Zm2 3h6V4H9v1Zm-3 2v13h12V7H6Zm2 3h8v2H8v-2Zm0 4h6v2H8v-2Z" />
-                                </svg>
+                        <span class="navigation-icon">
 
-                            </span>
+                            <svg
+                                viewBox="0 0 24 24"
+                                aria-hidden="true">
+                                <path
+                                    d="M3 6h18v12H3V6Zm2 2v8h14V8H5Zm2 2h6v2H7v-2Z" />
+                            </svg>
 
-                            <span>
-                                Assinaturas
-                            </span>
+                        </span>
 
-                        </a>
+                        <span>
+                            Planos
+                        </span>
+
+                    </a>
+
+
+                    <!-- ASSINATURAS - ainda não liberado -->
+
+                    <span
+                        class="navigation-item navigation-item-disabled"
+                        aria-disabled="true">
+
+                        <span class="navigation-icon">
+
+                            <svg
+                                viewBox="0 0 24 24"
+                                aria-hidden="true">
+                                <path
+                                    d="M7 2h10v3h3v17H4V5h3V2Zm2 3h6V4H9v1Zm-3 2v13h12V7H6Zm2 3h8v2H8v-2Zm0 4h6v2H8v-2Z" />
+                            </svg>
+
+                        </span>
+
+                        <span>
+                            Assinaturas
+                        </span>
+
+                    </span>
 
                 </div>
 
+
+                <!-- OPERAÇÕES -->
 
                 <div class="navigation-section">
 
@@ -316,8 +334,9 @@ $safeUserRole = htmlspecialchars(
                         Operações
                     </span>
 
-                    <a
-                        href="#"
+                    <!-- TENANTS - ainda não liberado -->
+
+                    <span
                         class="navigation-item navigation-item-disabled"
                         aria-disabled="true">
 
@@ -336,11 +355,12 @@ $safeUserRole = htmlspecialchars(
                             Tenants
                         </span>
 
-                    </a>
+                    </span>
 
 
-                    <a
-                        href="#"
+                    <!-- LOGS - ainda não liberado -->
+
+                    <span
                         class="navigation-item navigation-item-disabled"
                         aria-disabled="true">
 
@@ -359,7 +379,7 @@ $safeUserRole = htmlspecialchars(
                             Logs
                         </span>
 
-                    </a>
+                    </span>
 
                 </div>
 
@@ -371,29 +391,17 @@ $safeUserRole = htmlspecialchars(
                 <div class="sidebar-user">
 
                     <span class="user-avatar">
-                        <?= htmlspecialchars(
-                            mb_strtoupper(
-                                mb_substr(
-                                    $viewUserName,
-                                    0,
-                                    1,
-                                    'UTF-8'
-                                ),
-                                'UTF-8'
-                            ),
-                            ENT_QUOTES,
-                            'UTF-8'
-                        ) ?>
+                        <?= $e($userInitial) ?>
                     </span>
 
                     <div class="sidebar-user-info">
 
                         <strong>
-                            <?= $safeUserName ?>
+                            <?= $e($viewUserName) ?>
                         </strong>
 
                         <span>
-                            <?= $safeUserRole ?>
+                            <?= $e($viewUserRole) ?>
                         </span>
 
                     </div>
@@ -438,7 +446,7 @@ $safeUserRole = htmlspecialchars(
                         </span>
 
                         <strong>
-                            <?= $safeTitle ?>
+                            <?= $e($viewTitle) ?>
                         </strong>
 
                     </div>
@@ -451,11 +459,11 @@ $safeUserRole = htmlspecialchars(
                     <div class="header-user">
 
                         <span class="header-user-name">
-                            <?= $safeUserName ?>
+                            <?= $e($viewUserName) ?>
                         </span>
 
                         <span class="header-user-role">
-                            <?= $safeUserRole ?>
+                            <?= $e($viewUserRole) ?>
                         </span>
 
                     </div>
@@ -463,13 +471,15 @@ $safeUserRole = htmlspecialchars(
 
                     <form
                         method="POST"
-                        action="<?= $safeAppUrl ?>/logout"
+                        action="<?= $url('/logout') ?>"
                         class="logout-form">
 
                         <input
                             type="hidden"
                             name="_token"
-                            value="<?= $safeCsrfToken ?>">
+                            value="<?= $e(
+                                        $viewCsrfToken
+                                    ) ?>">
 
                         <button
                             type="submit"
@@ -498,8 +508,9 @@ $safeUserRole = htmlspecialchars(
 
 
     <script
-        src="<?= $safeAppUrl ?>/js/app.js"
-        defer></script>
+        src="<?= $url('/js/app.js') ?>"
+        defer>
+    </script>
 
 </body>
 
