@@ -1,0 +1,34 @@
+INIT SAAS PLATFORM - INADIMPLÊNCIA AUTOMÁTICA
+
+1. Rode a migration:
+   database/migrations/005_logs_origem_sistema.sql
+
+2. Substitua os arquivos do pacote no projeto.
+
+3. Teste o job manualmente:
+   cd C:\xampp\htdocs\init-platform
+   php bin\processar-inadimplencia.php
+
+   Saída esperada:
+   {"timestamp":"...","executado":true,"atrasadas":0,"suspensas":0,"falhas":0}
+
+4. Windows/XAMPP:
+   Abra PowerShell como usuário que executará a tarefa e rode:
+   powershell -ExecutionPolicy Bypass -File .\scripts\windows\instalar-tarefa-inadimplencia.ps1
+
+   A tarefa será criada para 00:10 todos os dias.
+
+5. Produção Linux:
+   Use o modelo:
+   deploy/cron/init-platform-inadimplencia
+
+SEGURANÇA
+
+- O job é CLI e fica fora de public/.
+- Não existe URL pública para executar o scheduler.
+- O PostgreSQL advisory lock impede duas execuções simultâneas.
+- Cada assinatura usa sua própria transação.
+- Auditorias automáticas usam usuario_id NULL e origem SISTEMA.
+- O scheduler não imprime SQL, credenciais ou dados de clientes.
+- O botão "Atualizar situação" continua disponível como fallback administrativo.
+- Se o servidor estiver desligado na hora programada, a próxima execução recupera vencimentos antigos porque a regra verifica proxima_cobranca_em < hoje.

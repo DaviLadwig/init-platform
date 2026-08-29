@@ -1,0 +1,4 @@
+# Init SaaS Platform - régua automática de inadimplência
+# Ajuste /var/www/init-platform caso o projeto esteja em outro diretório.
+CRON_TZ=America/Fortaleza
+10 0 * * * cd /var/www/init-platform && /usr/bin/php bin/processar-inadimplencia.php >> storage/logs/cron-inadimplencia.log 2>&1

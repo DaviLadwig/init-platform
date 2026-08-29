@@ -1,0 +1,30 @@
+INIT SAAS PLATFORM - DETALHES, HISTÓRICO E CANCELAMENTO
+
+1. Execute primeiro:
+   database/migrations/006_assinatura_cancelamento_motivo.sql
+
+2. Substitua os arquivos do pacote no projeto.
+
+3. Valide:
+   php -l app/Repositories/AssinaturaRepository.php
+   php -l app/Repositories/AssinaturaPagamentoRepository.php
+   php -l app/Services/AssinaturaService.php
+   php -l app/Controllers/AssinaturaController.php
+   php -l routes/web.php
+   php -l views/assinaturas/index.php
+   php -l views/assinaturas/show.php
+
+4. Teste:
+   - Assinaturas -> Ver
+   - confira dados do contrato
+   - confira histórico financeiro
+   - confirme que o pagamento de R$ 219 aparece
+   - teste cancelamento apenas em uma assinatura de teste
+
+IMPORTANTE:
+- Cancelamento é terminal para o contrato atual.
+- Pagamentos não são apagados.
+- Próxima cobrança fica preservada como fotografia histórica.
+- vencimento_em recebe a data do encerramento.
+- cancelamento_motivo fica persistido.
+- Uma nova assinatura do mesmo produto poderá ser criada depois do cancelamento.

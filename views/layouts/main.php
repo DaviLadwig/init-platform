@@ -300,11 +300,13 @@ $userInitial = mb_strtoupper(
                     </a>
 
 
-                    <!-- ASSINATURAS - ainda não liberado -->
+                    <!-- ASSINATURAS -->
 
-                    <span
-                        class="navigation-item navigation-item-disabled"
-                        aria-disabled="true">
+                    <a
+                        href="<?= $url('/assinaturas') ?>"
+                        class="<?= $e(
+                                    $navClass('assinaturas')
+                                ) ?>">
 
                         <span class="navigation-icon">
 
@@ -321,7 +323,7 @@ $userInitial = mb_strtoupper(
                             Assinaturas
                         </span>
 
-                    </span>
+                    </a>
 
                 </div>
 

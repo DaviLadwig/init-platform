@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Controllers\AuthController;
+use App\Controllers\AssinaturaController;
 use App\Controllers\ClienteController;
 use App\Controllers\EmpresaResponsavelController;
 use App\Controllers\HomeController;
@@ -410,6 +411,187 @@ $router->post(
         ]),
     ]
 );
+
+
+/*
+|--------------------------------------------------------------------------
+| Assinaturas
+|--------------------------------------------------------------------------
+*/
+
+$router->get(
+    '/assinaturas',
+    [
+        AssinaturaController::class,
+        'index',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+
+
+$router->post(
+    '/assinaturas/processar-inadimplencia',
+    [
+        AssinaturaController::class,
+        'processDelinquency',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+$router->get(
+    '/assinaturas/vencimentos',
+    [
+        AssinaturaController::class,
+        'vencimentos',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+$router->get(
+    '/assinaturas/novo',
+    [
+        AssinaturaController::class,
+        'create',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+$router->post(
+    '/assinaturas',
+    [
+        AssinaturaController::class,
+        'store',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+
+
+
+$router->post(
+    '/assinaturas/{id}/lembrete-whatsapp',
+    [
+        AssinaturaController::class,
+        'whatsappReminder',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+$router->get(
+    '/assinaturas/{id}/pagamento',
+    [
+        AssinaturaController::class,
+        'payment',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+$router->post(
+    '/assinaturas/{id}/pagamento',
+    [
+        AssinaturaController::class,
+        'storePayment',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+
+$router->post(
+    '/assinaturas/{id}/cancelar',
+    [
+        AssinaturaController::class,
+        'cancel',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+$router->post(
+    '/assinaturas/{id}/ativar',
+    [
+        AssinaturaController::class,
+        'activate',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+
+
+$router->get(
+    '/assinaturas/{id}',
+    [
+        AssinaturaController::class,
+        'show',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
 
 
 /*
