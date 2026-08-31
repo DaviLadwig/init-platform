@@ -40,6 +40,10 @@ $viewPageStyles = isset($pageStyles) && is_array($pageStyles)
     ? $pageStyles
     : [];
 
+$viewPageScripts = isset($pageScripts) && is_array($pageScripts)
+    ? $pageScripts
+    : [];
+
 
 /*
 |--------------------------------------------------------------------------
@@ -47,7 +51,7 @@ $viewPageStyles = isset($pageStyles) && is_array($pageStyles)
 |--------------------------------------------------------------------------
 */
 
-$e = static fn(string $value): string => htmlspecialchars(
+$e = static fn (string $value): string => htmlspecialchars(
     $value,
     ENT_QUOTES,
     'UTF-8'
@@ -70,8 +74,8 @@ $navClass = static function (string $menu) use (
     return 'navigation-item'
         . (
             $viewActiveMenu === $menu
-            ? ' active'
-            : ''
+                ? ' active'
+                : ''
         );
 };
 
@@ -127,8 +131,8 @@ $userInitial = mb_strtoupper(
             <link
                 rel="stylesheet"
                 href="<?= $url(
-                            '/css/' . $stylesheet
-                        ) ?>">
+                    '/css/' . $stylesheet
+                ) ?>">
 
         <?php endif; ?>
 
@@ -191,8 +195,8 @@ $userInitial = mb_strtoupper(
                     <a
                         href="<?= $url('/') ?>"
                         class="<?= $e(
-                                    $navClass('dashboard')
-                                ) ?>">
+                            $navClass('dashboard')
+                        ) ?>">
 
                         <span class="navigation-icon">
 
@@ -227,8 +231,8 @@ $userInitial = mb_strtoupper(
                     <a
                         href="<?= $url('/clientes') ?>"
                         class="<?= $e(
-                                    $navClass('clientes')
-                                ) ?>">
+                            $navClass('clientes')
+                        ) ?>">
 
                         <span class="navigation-icon">
 
@@ -253,8 +257,8 @@ $userInitial = mb_strtoupper(
                     <a
                         href="<?= $url('/produtos') ?>"
                         class="<?= $e(
-                                    $navClass('produtos')
-                                ) ?>">
+                            $navClass('produtos')
+                        ) ?>">
 
                         <span class="navigation-icon">
 
@@ -279,8 +283,8 @@ $userInitial = mb_strtoupper(
                     <a
                         href="<?= $url('/planos') ?>"
                         class="<?= $e(
-                                    $navClass('planos')
-                                ) ?>">
+                            $navClass('planos')
+                        ) ?>">
 
                         <span class="navigation-icon">
 
@@ -305,8 +309,8 @@ $userInitial = mb_strtoupper(
                     <a
                         href="<?= $url('/assinaturas') ?>"
                         class="<?= $e(
-                                    $navClass('assinaturas')
-                                ) ?>">
+                            $navClass('assinaturas')
+                        ) ?>">
 
                         <span class="navigation-icon">
 
@@ -480,8 +484,8 @@ $userInitial = mb_strtoupper(
                             type="hidden"
                             name="_token"
                             value="<?= $e(
-                                        $viewCsrfToken
-                                    ) ?>">
+                                $viewCsrfToken
+                            ) ?>">
 
                         <button
                             type="submit"
@@ -513,6 +517,30 @@ $userInitial = mb_strtoupper(
         src="<?= $url('/js/app.js') ?>"
         defer>
     </script>
+
+    <?php foreach ($viewPageScripts as $script): ?>
+
+        <?php
+
+        $scriptIsValid =
+            is_string($script)
+            && preg_match(
+                '/^[a-z0-9_-]+\.js$/',
+                $script
+            ) === 1;
+
+        ?>
+
+        <?php if ($scriptIsValid): ?>
+
+            <script
+                src="<?= $url('/js/' . $script) ?>"
+                defer>
+            </script>
+
+        <?php endif; ?>
+
+    <?php endforeach; ?>
 
 </body>
 

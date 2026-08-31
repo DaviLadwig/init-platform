@@ -12,6 +12,41 @@ $viewPagamentos = isset($pagamentos)
         ? $pagamentos
         : [];
 
+$viewDocumentosContratuais =
+    isset($documentosContratuais)
+    && is_array($documentosContratuais)
+        ? $documentosContratuais
+        : [];
+
+$viewModelosContratuais =
+    isset($viewDocumentosContratuais['modelos'])
+    && is_array($viewDocumentosContratuais['modelos'])
+        ? $viewDocumentosContratuais['modelos']
+        : [];
+
+$viewResponsaveisContratuais =
+    isset($viewDocumentosContratuais['responsaveis'])
+    && is_array($viewDocumentosContratuais['responsaveis'])
+        ? $viewDocumentosContratuais['responsaveis']
+        : [];
+
+$viewDocumentosCancelados =
+    isset($viewDocumentosContratuais['cancelados'])
+    && is_array($viewDocumentosContratuais['cancelados'])
+        ? $viewDocumentosContratuais['cancelados']
+        : [];
+
+$viewRequisitosDocumentais =
+    isset($viewDocumentosContratuais['requisitos_ativacao'])
+    && is_array($viewDocumentosContratuais['requisitos_ativacao'])
+        ? $viewDocumentosContratuais['requisitos_ativacao']
+        : [
+            'pronto' => true,
+            'total_obrigatorios' => 0,
+            'total_assinados' => 0,
+            'pendencias' => [],
+        ];
+
 $viewSuccess = isset($success)
     && is_string($success)
         ? $success
@@ -501,6 +536,843 @@ $formatMoney = static function (
 <?php endif; ?>
 
 
+<section class="subscription-documents-panel">
+
+    <header class="subscription-documents-header">
+
+        <div>
+
+            <span class="subscription-section-eyebrow">
+                Documentação
+            </span>
+
+            <h2>
+                Documentos contratuais
+            </h2>
+
+            <p>
+                Termos vinculados à contratação e documentos assinados pelo responsável da empresa.
+            </p>
+
+        </div>
+
+        <?php
+
+        $documentacaoPronta =
+            ($viewRequisitosDocumentais['pronto'] ?? false)
+            === true;
+
+        $totalObrigatorios =
+            isset($viewRequisitosDocumentais['total_obrigatorios'])
+                ? (int) $viewRequisitosDocumentais['total_obrigatorios']
+                : 0;
+
+        $totalAssinados =
+            isset($viewRequisitosDocumentais['total_assinados'])
+                ? (int) $viewRequisitosDocumentais['total_assinados']
+                : 0;
+
+        ?>
+
+        <?php if ($totalObrigatorios > 0): ?>
+
+            <div class="subscription-document-summary">
+
+                <span
+                    class="subscription-document-summary-state <?= $documentacaoPronta
+                        ? 'is-complete'
+                        : 'is-pending' ?>"
+                >
+                    <?= $documentacaoPronta
+                        ? 'Documentação completa'
+                        : 'Documentação pendente' ?>
+                </span>
+
+                <small>
+                    <?= $totalAssinados ?>
+                    de
+                    <?= $totalObrigatorios ?>
+                    obrigatório<?= $totalObrigatorios === 1 ? '' : 's' ?>
+                    assinado<?= $totalObrigatorios === 1 ? '' : 's' ?>
+                </small>
+
+            </div>
+
+        <?php endif; ?>
+
+    </header>
+
+
+    <?php if ($viewModelosContratuais === []): ?>
+
+        <div class="subscription-document-empty">
+
+            <strong>
+                Nenhum termo ativo configurado
+            </strong>
+
+            <p>
+                Cadastre uma versão contratual ativa para vinculá-la às assinaturas.
+            </p>
+
+        </div>
+
+    <?php else: ?>
+
+        <div class="subscription-document-list">
+
+            <?php foreach ($viewModelosContratuais as $modelo): ?>
+
+                <?php
+
+                if (!is_array($modelo)) {
+                    continue;
+                }
+
+                $modeloId =
+                    isset($modelo['id'])
+                        ? (int) $modelo['id']
+                        : 0;
+
+                $modeloTitulo =
+                    isset($modelo['titulo'])
+                    && is_string($modelo['titulo'])
+                        ? $modelo['titulo']
+                        : 'Documento contratual';
+
+                $modeloVersao =
+                    isset($modelo['versao'])
+                    && is_string($modelo['versao'])
+                        ? $modelo['versao']
+                        : '';
+
+                $modeloDescricao =
+                    isset($modelo['descricao'])
+                    && is_string($modelo['descricao'])
+                        ? trim($modelo['descricao'])
+                        : '';
+
+                $modeloObrigatorio =
+                    ($modelo['obrigatorio_ativacao'] ?? false)
+                    === true;
+
+                $tentativa =
+                    isset($modelo['tentativa_vigente'])
+                    && is_array($modelo['tentativa_vigente'])
+                        ? $modelo['tentativa_vigente']
+                        : null;
+
+                $documentoId =
+                    $tentativa !== null
+                    && isset($tentativa['id'])
+                        ? (int) $tentativa['id']
+                        : 0;
+
+                $documentoStatus =
+                    $tentativa !== null
+                    && isset($tentativa['status'])
+                    && is_string($tentativa['status'])
+                        ? $tentativa['status']
+                        : null;
+
+                $documentStatusData = match ($documentoStatus) {
+                    'GERADO' => [
+                        'label' => 'Gerado',
+                        'class' => 'document-status-generated',
+                    ],
+                    'AGUARDANDO_ASSINATURA' => [
+                        'label' => 'Aguardando assinatura',
+                        'class' => 'document-status-waiting',
+                    ],
+                    'ASSINADO' => [
+                        'label' => 'Assinado',
+                        'class' => 'document-status-signed',
+                    ],
+                    default => [
+                        'label' => 'Não gerado',
+                        'class' => 'document-status-neutral',
+                    ],
+                };
+
+                ?>
+
+                <article class="subscription-document-item">
+
+                    <div class="subscription-document-item-head">
+
+                        <div>
+
+                            <div class="subscription-document-title-line">
+
+                                <h3>
+                                    <?= htmlspecialchars(
+                                        $modeloTitulo,
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    ) ?>
+                                </h3>
+
+                                <span class="subscription-document-version">
+                                    v<?= htmlspecialchars(
+                                        $modeloVersao,
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    ) ?>
+                                </span>
+
+                                <?php if ($modeloObrigatorio): ?>
+
+                                    <span class="subscription-document-required">
+                                        Obrigatório
+                                    </span>
+
+                                <?php endif; ?>
+
+                            </div>
+
+                            <?php if ($modeloDescricao !== ''): ?>
+
+                                <p>
+                                    <?= htmlspecialchars(
+                                        $modeloDescricao,
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    ) ?>
+                                </p>
+
+                            <?php endif; ?>
+
+                        </div>
+
+                        <span
+                            class="subscription-document-status <?= htmlspecialchars(
+                                $documentStatusData['class'],
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>"
+                        >
+                            <?= htmlspecialchars(
+                                $documentStatusData['label'],
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>
+                        </span>
+
+                    </div>
+
+
+                    <?php if (
+                        $tentativa === null
+                        && $status !== 'CANCELADA'
+                        && $modeloId > 0
+                    ): ?>
+
+                        <?php if ($viewResponsaveisContratuais === []): ?>
+
+                            <div class="subscription-document-warning">
+
+                                <strong>
+                                    Responsável necessário
+                                </strong>
+
+                                <p>
+                                    Cadastre ou ative um responsável da empresa antes de gerar o termo.
+                                </p>
+
+                            </div>
+
+                        <?php else: ?>
+
+                            <form
+                                method="POST"
+                                action="<?= htmlspecialchars(
+                                    $viewAppUrl
+                                        . '/assinaturas/'
+                                        . $assinaturaId
+                                        . '/documentos',
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                ) ?>"
+                                enctype="multipart/form-data"
+                                class="subscription-document-form"
+                            >
+
+                                <input
+                                    type="hidden"
+                                    name="_token"
+                                    value="<?= htmlspecialchars(
+                                        $viewCsrfToken,
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    ) ?>"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="documento_contratual_id"
+                                    value="<?= $modeloId ?>"
+                                >
+
+                                <div class="subscription-document-fields">
+
+                                    <div class="field-group">
+
+                                        <label
+                                            for="responsavel-<?= $modeloId ?>"
+                                        >
+                                            Responsável que assinará
+                                        </label>
+
+                                        <select
+                                            id="responsavel-<?= $modeloId ?>"
+                                            name="responsavel_id"
+                                            required
+                                        >
+                                            <option value="">
+                                                Selecione
+                                            </option>
+
+                                            <?php foreach ($viewResponsaveisContratuais as $responsavel): ?>
+
+                                                <?php
+
+                                                if (!is_array($responsavel)) {
+                                                    continue;
+                                                }
+
+                                                $responsavelId =
+                                                    isset($responsavel['id'])
+                                                        ? (int) $responsavel['id']
+                                                        : 0;
+
+                                                $responsavelNome =
+                                                    isset($responsavel['nome'])
+                                                    && is_string($responsavel['nome'])
+                                                        ? trim($responsavel['nome'])
+                                                        : '';
+
+                                                $responsavelPrincipal =
+                                                    ($responsavel['principal'] ?? false)
+                                                    === true
+                                                    || ($responsavel['principal'] ?? null) === 't'
+                                                    || ($responsavel['principal'] ?? null) === '1';
+
+                                                if (
+                                                    $responsavelId <= 0
+                                                    || $responsavelNome === ''
+                                                ) {
+                                                    continue;
+                                                }
+
+                                                ?>
+
+                                                <option value="<?= $responsavelId ?>">
+                                                    <?= htmlspecialchars(
+                                                        $responsavelNome
+                                                        . (
+                                                            $responsavelPrincipal
+                                                                ? ' — Principal'
+                                                                : ''
+                                                        ),
+                                                        ENT_QUOTES,
+                                                        'UTF-8'
+                                                    ) ?>
+                                                </option>
+
+                                            <?php endforeach; ?>
+
+                                        </select>
+
+                                    </div>
+
+
+                                    <div class="field-group">
+
+                                        <label
+                                            for="documento-pdf-<?= $modeloId ?>"
+                                        >
+                                            PDF original do termo
+                                        </label>
+
+                                        <input
+                                            id="documento-pdf-<?= $modeloId ?>"
+                                            type="file"
+                                            name="documento_pdf"
+                                            accept=".pdf,application/pdf"
+                                            required
+                                        >
+
+                                        <span class="field-hint">
+                                            PDF de até 15 MB. O arquivo será armazenado de forma privada e receberá hash SHA-256.
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="subscription-document-form-actions">
+
+                                    <button
+                                        type="submit"
+                                        class="button-primary"
+                                    >
+                                        Registrar termo
+                                    </button>
+
+                                </div>
+
+                            </form>
+
+                        <?php endif; ?>
+
+
+                    <?php elseif (
+                        $tentativa !== null
+                        && $documentoId > 0
+                    ): ?>
+
+                        <?php
+
+                        $responsavelNomeDocumento =
+                            isset($tentativa['responsavel_nome'])
+                            && is_string($tentativa['responsavel_nome'])
+                                ? trim($tentativa['responsavel_nome'])
+                                : '';
+
+                        $responsavelDocumentoId =
+                            isset($tentativa['responsavel_id'])
+                                ? (int) $tentativa['responsavel_id']
+                                : 0;
+
+                        $provider =
+                            isset($tentativa['provider'])
+                            && is_string($tentativa['provider'])
+                                ? $tentativa['provider']
+                                : '';
+
+                        ?>
+
+                        <div class="subscription-document-meta">
+
+                            <div>
+                                <span>Responsável</span>
+                                <strong>
+                                    <?= htmlspecialchars(
+                                        $responsavelNomeDocumento !== ''
+                                            ? $responsavelNomeDocumento
+                                            : '—',
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    ) ?>
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Provedor</span>
+                                <strong>
+                                    <?= htmlspecialchars(
+                                        $provider !== ''
+                                            ? $provider
+                                            : 'Ainda não enviado',
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    ) ?>
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Enviado em</span>
+                                <strong>
+                                    <?= htmlspecialchars(
+                                        $formatDateTime(
+                                            $tentativa['enviado_em']
+                                            ?? null
+                                        ),
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    ) ?>
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Assinado em</span>
+                                <strong>
+                                    <?= htmlspecialchars(
+                                        isset($tentativa['assinado_data'])
+                                        && is_string($tentativa['assinado_data'])
+                                        && $tentativa['assinado_data'] !== ''
+                                            ? $formatDate(
+                                                $tentativa['assinado_data']
+                                            )
+                                            : $formatDate(
+                                                $tentativa['assinado_em']
+                                                ?? null
+                                            ),
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    ) ?>
+                                </strong>
+                            </div>
+
+                        </div>
+
+
+                        <div class="subscription-document-actions">
+
+                            <a
+                                href="<?= htmlspecialchars(
+                                    $viewAppUrl
+                                        . '/assinaturas/'
+                                        . $assinaturaId
+                                        . '/documentos/'
+                                        . $documentoId
+                                        . '/original',
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                ) ?>"
+                                class="button-secondary"
+                            >
+                                Baixar original
+                            </a>
+
+
+                            <?php if ($documentoStatus === 'GERADO'): ?>
+
+                                <form
+                                    method="POST"
+                                    action="<?= htmlspecialchars(
+                                        $viewAppUrl
+                                            . '/assinaturas/'
+                                            . $assinaturaId
+                                            . '/documentos/'
+                                            . $documentoId
+                                            . '/enviar-autentique',
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    ) ?>"
+                                >
+
+                                    <input
+                                        type="hidden"
+                                        name="_token"
+                                        value="<?= htmlspecialchars(
+                                            $viewCsrfToken,
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        ) ?>"
+                                    >
+
+                                    <button
+                                        type="submit"
+                                        class="button-primary"
+                                    >
+                                        Marcar envio ao Autentique
+                                    </button>
+
+                                </form>
+
+                            <?php endif; ?>
+
+
+                            <?php if ($documentoStatus === 'ASSINADO'): ?>
+
+                                <a
+                                    href="<?= htmlspecialchars(
+                                        $viewAppUrl
+                                            . '/assinaturas/'
+                                            . $assinaturaId
+                                            . '/documentos/'
+                                            . $documentoId
+                                            . '/assinado',
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    ) ?>"
+                                    class="button-secondary"
+                                >
+                                    Baixar assinado
+                                </a>
+
+                            <?php endif; ?>
+
+                        </div>
+
+
+                        <?php if (
+                            $documentoStatus === 'GERADO'
+                        ): ?>
+
+                            <div class="subscription-document-guidance">
+
+                                <strong>
+                                    Próximo passo
+                                </strong>
+
+                                <p>
+                                    Baixe o original, envie o arquivo manualmente pelo Autentique e, depois do envio, marque esta etapa no sistema.
+                                </p>
+
+                            </div>
+
+                        <?php endif; ?>
+
+
+                        <?php if (
+                            $documentoStatus === 'AGUARDANDO_ASSINATURA'
+                            && $responsavelDocumentoId > 0
+                        ): ?>
+
+                            <form
+                                method="POST"
+                                action="<?= htmlspecialchars(
+                                    $viewAppUrl
+                                        . '/assinaturas/'
+                                        . $assinaturaId
+                                        . '/documentos/'
+                                        . $documentoId
+                                        . '/assinado',
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                ) ?>"
+                                enctype="multipart/form-data"
+                                class="subscription-document-form subscription-document-signed-form"
+                            >
+
+                                <input
+                                    type="hidden"
+                                    name="_token"
+                                    value="<?= htmlspecialchars(
+                                        $viewCsrfToken,
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    ) ?>"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="responsavel_id"
+                                    value="<?= $responsavelDocumentoId ?>"
+                                >
+
+                                <div class="subscription-document-fields">
+
+                                    <div class="field-group">
+
+                                        <label
+                                            for="documento-assinado-<?= $documentoId ?>"
+                                        >
+                                            PDF assinado
+                                        </label>
+
+                                        <input
+                                            id="documento-assinado-<?= $documentoId ?>"
+                                            type="file"
+                                            name="documento_assinado_pdf"
+                                            accept=".pdf,application/pdf"
+                                            required
+                                        >
+
+                                    </div>
+
+                                    <div class="field-group">
+
+                                        <label
+                                            for="assinado-data-<?= $documentoId ?>"
+                                        >
+                                            Data da assinatura
+                                        </label>
+
+                                        <div class="subscription-date-field">
+
+                                            <input
+                                                id="assinado-data-<?= $documentoId ?>"
+                                                class="subscription-date-input"
+                                                type="date"
+                                                name="assinado_data"
+                                                max="<?= htmlspecialchars(
+                                                    date('Y-m-d'),
+                                                    ENT_QUOTES,
+                                                    'UTF-8'
+                                                ) ?>"
+                                                required
+                                            >
+
+                                        </div>
+
+                                        <span class="field-hint">
+                                            Informe somente a data exibida no documento/Autentique.
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+                                <div class="subscription-document-form-actions">
+
+                                    <button
+                                        type="submit"
+                                        class="button-primary"
+                                    >
+                                        Registrar documento assinado
+                                    </button>
+
+                                </div>
+
+                            </form>
+
+                        <?php endif; ?>
+
+
+                        <?php if (
+                            in_array(
+                                $documentoStatus,
+                                [
+                                    'GERADO',
+                                    'AGUARDANDO_ASSINATURA',
+                                ],
+                                true
+                            )
+                        ): ?>
+
+                            <form
+                                method="POST"
+                                action="<?= htmlspecialchars(
+                                    $viewAppUrl
+                                        . '/assinaturas/'
+                                        . $assinaturaId
+                                        . '/documentos/'
+                                        . $documentoId
+                                        . '/cancelar',
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                ) ?>"
+                                class="subscription-document-cancel-form"
+                            >
+
+                                <input
+                                    type="hidden"
+                                    name="_token"
+                                    value="<?= htmlspecialchars(
+                                        $viewCsrfToken,
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    ) ?>"
+                                >
+
+                                <button
+                                    type="submit"
+                                    class="subscription-document-cancel-button"
+                                >
+                                    Cancelar tentativa
+                                </button>
+
+                            </form>
+
+                        <?php endif; ?>
+
+
+                        <?php if ($documentoStatus === 'ASSINADO'): ?>
+
+                            <div class="subscription-document-signed-info">
+
+                                <span>
+                                    Documento consolidado
+                                </span>
+
+                                <strong>
+                                    <?= htmlspecialchars(
+                                        isset($tentativa['signatario_nome'])
+                                        && is_string($tentativa['signatario_nome'])
+                                            ? $tentativa['signatario_nome']
+                                            : 'Responsável registrado',
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    ) ?>
+                                </strong>
+
+                                <p>
+                                    O PDF assinado está preservado no storage privado e protegido contra alteração pelo banco de dados.
+                                </p>
+
+                            </div>
+
+                        <?php endif; ?>
+
+                    <?php endif; ?>
+
+                </article>
+
+            <?php endforeach; ?>
+
+        </div>
+
+    <?php endif; ?>
+
+
+    <?php if ($viewDocumentosCancelados !== []): ?>
+
+        <details class="subscription-document-history">
+
+            <summary>
+                Tentativas canceladas
+                (<?= count($viewDocumentosCancelados) ?>)
+            </summary>
+
+            <div>
+
+                <?php foreach ($viewDocumentosCancelados as $cancelado): ?>
+
+                    <?php
+
+                    if (!is_array($cancelado)) {
+                        continue;
+                    }
+
+                    ?>
+
+                    <p>
+                        <strong>
+                            <?= htmlspecialchars(
+                                isset($cancelado['titulo_snapshot'])
+                                && is_string($cancelado['titulo_snapshot'])
+                                    ? $cancelado['titulo_snapshot']
+                                    : 'Documento contratual',
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>
+                        </strong>
+
+                        <span>
+                            v<?= htmlspecialchars(
+                                isset($cancelado['versao_snapshot'])
+                                && is_string($cancelado['versao_snapshot'])
+                                    ? $cancelado['versao_snapshot']
+                                    : '',
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>
+                            · cancelado em
+                            <?= htmlspecialchars(
+                                $formatDateTime(
+                                    $cancelado['cancelado_em']
+                                    ?? null
+                                ),
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>
+                        </span>
+                    </p>
+
+                <?php endforeach; ?>
+
+            </div>
+
+        </details>
+
+    <?php endif; ?>
+
+</section>
+
+
 <section class="data-panel subscription-history-panel">
 
     <header class="data-panel-header">
@@ -735,6 +1607,14 @@ $formatMoney = static function (
 
         <?php if ($status === 'PENDENTE_ATIVACAO'): ?>
 
+            <?php
+
+            $ativacaoDocumentalPermitida =
+                ($viewRequisitosDocumentais['pronto'] ?? false)
+                === true;
+
+            ?>
+
             <div class="subscription-operation-row">
 
                 <div>
@@ -742,41 +1622,66 @@ $formatMoney = static function (
                         Ativar assinatura
                     </strong>
 
-                    <p>
-                        Inicia o ciclo comercial e define a primeira cobrança.
-                    </p>
+                    <?php if ($ativacaoDocumentalPermitida): ?>
+
+                        <p>
+                            Documentação obrigatória concluída. A assinatura está apta para iniciar o ciclo comercial.
+                        </p>
+
+                    <?php else: ?>
+
+                        <p>
+                            Conclua a assinatura dos documentos contratuais obrigatórios antes da ativação.
+                        </p>
+
+                    <?php endif; ?>
                 </div>
 
-                <form
-                    method="POST"
-                    action="<?= htmlspecialchars(
-                        $viewAppUrl
-                            . '/assinaturas/'
-                            . $assinaturaId
-                            . '/ativar',
-                        ENT_QUOTES,
-                        'UTF-8'
-                    ) ?>"
-                >
+                <?php if ($ativacaoDocumentalPermitida): ?>
 
-                    <input
-                        type="hidden"
-                        name="_token"
-                        value="<?= htmlspecialchars(
-                            $viewCsrfToken,
+                    <form
+                        method="POST"
+                        action="<?= htmlspecialchars(
+                            $viewAppUrl
+                                . '/assinaturas/'
+                                . $assinaturaId
+                                . '/ativar',
                             ENT_QUOTES,
                             'UTF-8'
                         ) ?>"
                     >
 
+                        <input
+                            type="hidden"
+                            name="_token"
+                            value="<?= htmlspecialchars(
+                                $viewCsrfToken,
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>"
+                        >
+
+                        <button
+                            type="submit"
+                            class="button-primary"
+                        >
+                            Ativar assinatura
+                        </button>
+
+                    </form>
+
+                <?php else: ?>
+
                     <button
-                        type="submit"
-                        class="button-primary"
+                        type="button"
+                        class="button-secondary subscription-activation-disabled"
+                        disabled
+                        aria-disabled="true"
                     >
-                        Ativar assinatura
+                        Aguardando documentação
                     </button>
 
-                </form>
+                <?php endif; ?>
 
             </div>
 

@@ -21,13 +21,22 @@ final class ClienteController
         'clientes.css',
     ];
 
+    private const PAGE_SCRIPTS = [
+        'clientes.js',
+    ];
+
+    /**
+     * Somente campos que realmente podem vir do navegador.
+     *
+     * O slug NÃO faz parte do formulário.
+     * Ele é um identificador técnico gerenciado pelo backend.
+     */
     private const FORM_FIELDS = [
         'razao_social',
         'nome_fantasia',
         'cnpj',
         'email',
         'telefone',
-        'slug',
     ];
 
     private ClienteService $service;
@@ -100,35 +109,6 @@ final class ClienteController
     }
 
     /**
-     * Exibe a ficha cadastral do cliente.
-     */
-    public function show(string $id): void
-    {
-        $clienteId = $this->validateId($id);
-
-        $cliente = $this->service->buscar(
-            $clienteId
-        );
-
-        if ($cliente === null) {
-            throw new HttpException(
-                404,
-                'Cliente não encontrado.'
-            );
-        }
-
-        $this->render(
-            'clientes/show.php',
-            'Cliente',
-            self::ACTIVE_MENU,
-            [
-                'cliente' => $cliente,
-                'pageStyles' => self::PAGE_STYLES,
-            ]
-        );
-    }
-
-    /**
      * Exibe o formulário de cadastro.
      */
     public function create(): void
@@ -148,8 +128,21 @@ final class ClienteController
 
         $context = $this->requestContext();
 
+        $input = $this->formInput($_POST);
+
+        /*
+         * O slug é criado exclusivamente no servidor.
+         * Nunca aceitamos um slug enviado pelo navegador.
+         */
+        $input['slug'] = $this->generateTechnicalSlug(
+            $input['nome_fantasia'] !== ''
+                ? $input['nome_fantasia']
+                : $input['razao_social'],
+            $input['cnpj']
+        );
+
         $result = $this->service->cadastrar(
-            $this->formInput($_POST),
+            $input,
             $context['usuario_id'],
             $context['ip'],
             $context['user_agent']
@@ -172,6 +165,73 @@ final class ClienteController
 
         $this->redirect('/clientes', 303);
     }
+
+    /**
+     * Exibe a ficha cadastral do cliente.
+     *
+     * A rota /clientes/{id} já existia e apontava para show().
+     * Este método resolve o cliente exclusivamente no backend.
+     */
+    public function show(string $id): void
+    {
+        $clienteId = $this->validateId($id);
+
+        $cliente = $this->service->buscar(
+            $clienteId
+        );
+
+        if ($cliente === null) {
+            throw new HttpException(
+                404,
+                'Cliente não encontrado.'
+            );
+        }
+
+        /*
+         * A listagem já contém os indicadores comerciais agregados.
+         * Reaproveitamos somente a linha do cliente atual para
+         * enriquecer a ficha, sem confiar em parâmetros do navegador.
+         */
+        $resumoComercial = [];
+
+        foreach ($this->service->listar() as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $itemId = $item['id'] ?? null;
+
+            if (
+                (
+                    is_int($itemId)
+                    && $itemId === $clienteId
+                )
+                || (
+                    is_string($itemId)
+                    && ctype_digit($itemId)
+                    && (int) $itemId === $clienteId
+                )
+            ) {
+                $resumoComercial = $item;
+                break;
+            }
+        }
+
+        $this->render(
+            'clientes/show.php',
+            'Cliente',
+            self::ACTIVE_MENU,
+            [
+                'cliente' => $cliente,
+                'resumoComercial' => $resumoComercial,
+                'pageStyles' => [
+                    'clientes.css',
+                    'clientes-show.css',
+                ],
+            ]
+        );
+    }
+
 
     /**
      * Exibe o formulário de edição cadastral.
@@ -200,6 +260,7 @@ final class ClienteController
      * Processa a edição dos dados cadastrais.
      *
      * O status da empresa não é alterado por esta operação.
+     * O slug técnico também permanece estável.
      */
     public function update(string $id): void
     {
@@ -207,11 +268,41 @@ final class ClienteController
 
         $this->enforceCsrf();
 
+        /*
+         * Buscamos primeiro o registro atual para preservar o slug.
+         * Mudanças de razão social/nome fantasia não mudam o
+         * identificador técnico já persistido.
+         */
+        $clienteAtual = $this->service->buscar($clienteId);
+
+        if ($clienteAtual === null) {
+            throw new HttpException(
+                404,
+                'Cliente não encontrado.'
+            );
+        }
+
         $context = $this->requestContext();
+
+        $input = $this->formInput($_POST);
+
+        $slugAtual = $this->stringValue(
+            $clienteAtual,
+            'slug'
+        );
+
+        $input['slug'] = $slugAtual !== ''
+            ? $slugAtual
+            : $this->generateTechnicalSlug(
+                $input['nome_fantasia'] !== ''
+                    ? $input['nome_fantasia']
+                    : $input['razao_social'],
+                $input['cnpj']
+            );
 
         $result = $this->service->editar(
             $clienteId,
-            $this->formInput($_POST),
+            $input,
             $context['usuario_id'],
             $context['ip'],
             $context['user_agent']
@@ -273,6 +364,7 @@ final class ClienteController
                 'errors' => $errors,
                 'formData' => $formData,
                 'pageStyles' => self::PAGE_STYLES,
+                'pageScripts' => self::PAGE_SCRIPTS,
             ]
         );
     }
@@ -301,6 +393,7 @@ final class ClienteController
                 'errors' => $errors,
                 'formData' => $formData,
                 'pageStyles' => self::PAGE_STYLES,
+                'pageScripts' => self::PAGE_SCRIPTS,
             ]
         );
     }
@@ -308,8 +401,8 @@ final class ClienteController
     /**
      * Mantém somente os campos permitidos para cadastro/edição.
      *
-     * Campos extras como status, IDs internos ou outros valores
-     * enviados manualmente são descartados.
+     * Também normaliza o CNPJ no backend. A máscara visual é apenas
+     * uma conveniência da interface; o servidor trabalha com 14 dígitos.
      */
     private function formInput(array $input): array
     {
@@ -319,9 +412,19 @@ final class ClienteController
             $value = $input[$field] ?? '';
 
             $data[$field] = is_string($value)
-                ? $value
+                ? trim($value)
                 : '';
         }
+
+        $cnpj = preg_replace(
+            '/\D+/',
+            '',
+            $data['cnpj']
+        );
+
+        $data['cnpj'] = is_string($cnpj)
+            ? substr($cnpj, 0, 14)
+            : '';
 
         return $data;
     }
@@ -338,8 +441,7 @@ final class ClienteController
     }
 
     /**
-     * Converte os dados persistidos do cliente
-     * para o formato esperado pela view.
+     * Converte os dados persistidos do cliente para o formato da view.
      */
     private function clienteToFormData(array $cliente): array
     {
@@ -356,15 +458,23 @@ final class ClienteController
     }
 
     /**
-     * Obtém os erros retornados pelo Service.
+     * Obtém os erros retornados pelo Service de forma segura.
      */
     private function resultErrors(array $result): array
     {
         $errors = $result['errors'] ?? null;
 
-        return is_array($errors)
-            ? $errors
-            : [];
+        if (!is_array($errors)) {
+            return [];
+        }
+
+        /*
+         * Slug é interno. Mesmo que uma defesa do Service retorne
+         * esse erro, não exibimos um campo técnico para o usuário.
+         */
+        unset($errors['slug']);
+
+        return $errors;
     }
 
     /**
@@ -391,8 +501,106 @@ final class ClienteController
     }
 
     /**
-     * Recupera uma string de um array
-     * sem confiar diretamente no tipo recebido.
+     * Gera um slug técnico estável para novos clientes.
+     *
+     * Formato:
+     *   nome-legivel-<hash-do-cnpj>
+     *
+     * O hash reduz colisões sem expor o CNPJ inteiro no identificador.
+     * Depois de criado, o slug é preservado mesmo se o nome mudar.
+     */
+    private function generateTechnicalSlug(
+        string $name,
+        string $cnpj
+    ): string {
+        $base = mb_strtolower(
+            trim($name),
+            'UTF-8'
+        );
+
+        $base = strtr(
+            $base,
+            [
+                'á' => 'a',
+                'à' => 'a',
+                'â' => 'a',
+                'ã' => 'a',
+                'ä' => 'a',
+                'é' => 'e',
+                'è' => 'e',
+                'ê' => 'e',
+                'ë' => 'e',
+                'í' => 'i',
+                'ì' => 'i',
+                'î' => 'i',
+                'ï' => 'i',
+                'ó' => 'o',
+                'ò' => 'o',
+                'ô' => 'o',
+                'õ' => 'o',
+                'ö' => 'o',
+                'ú' => 'u',
+                'ù' => 'u',
+                'û' => 'u',
+                'ü' => 'u',
+                'ç' => 'c',
+                'ñ' => 'n',
+            ]
+        );
+
+        $base = preg_replace(
+            '/[^a-z0-9]+/',
+            '-',
+            $base
+        );
+
+        $base = is_string($base)
+            ? trim($base, '-')
+            : '';
+
+        if ($base === '') {
+            $base = 'empresa';
+        }
+
+        /*
+         * Mantém o slug abaixo do limite atual de VARCHAR(150).
+         */
+        $base = rtrim(
+            mb_substr(
+                $base,
+                0,
+                130,
+                'UTF-8'
+            ),
+            '-'
+        );
+
+        $cnpjDigits = preg_replace(
+            '/\D+/',
+            '',
+            $cnpj
+        );
+
+        $cnpjDigits = is_string($cnpjDigits)
+            ? $cnpjDigits
+            : '';
+
+        $suffix = substr(
+            hash(
+                'sha256',
+                $cnpjDigits
+            ),
+            0,
+            12
+        );
+
+        return $base
+            . '-'
+            . $suffix;
+    }
+
+    /**
+     * Recupera uma string de um array sem confiar no tipo recebido.
      */
     private function stringValue(
         array $source,
@@ -466,24 +674,19 @@ final class ClienteController
         }
 
         /*
-         * Não confiamos em X-Forwarded-For sem
-         * proxy confiável explicitamente configurado.
+         * Não confiamos em X-Forwarded-For sem uma camada de proxy
+         * confiável explicitamente configurada.
          */
         $ip = $_SERVER['REMOTE_ADDR'] ?? null;
 
         if (
             !is_string($ip)
-            || filter_var(
-                $ip,
-                FILTER_VALIDATE_IP
-            ) === false
+            || filter_var($ip, FILTER_VALIDATE_IP) === false
         ) {
             $ip = null;
         }
 
-        $userAgent =
-            $_SERVER['HTTP_USER_AGENT']
-            ?? null;
+        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
 
         if (is_string($userAgent)) {
             $userAgent = mb_substr(
@@ -542,21 +745,21 @@ final class ClienteController
         $userName = is_array($auth)
             && isset($auth['name'])
             && is_string($auth['name'])
-            ? $auth['name']
-            : 'Usuário';
+                ? $auth['name']
+                : 'Usuário';
 
         $roles = is_array($auth)
             && isset($auth['roles'])
             && is_array($auth['roles'])
-            ? $auth['roles']
-            : [];
+                ? $auth['roles']
+                : [];
 
         $userRole = implode(
             ', ',
             array_filter(
                 $roles,
-                static fn(mixed $role): bool =>
-                is_string($role)
+                static fn (mixed $role): bool =>
+                    is_string($role)
                     && $role !== ''
             )
         );
@@ -597,8 +800,7 @@ final class ClienteController
     }
 
     /**
-     * Redireciona utilizando somente
-     * a APP_URL configurada no servidor.
+     * Redireciona utilizando somente a APP_URL configurada no servidor.
      */
     private function redirect(
         string $path,

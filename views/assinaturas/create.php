@@ -4,57 +4,57 @@ declare(strict_types=1);
 
 $viewEmpresas = isset($empresas)
     && is_array($empresas)
-    ? $empresas
-    : [];
+        ? $empresas
+        : [];
 
 $viewCatalogo = isset($catalogo)
     && is_array($catalogo)
-    ? $catalogo
-    : [];
+        ? $catalogo
+        : [];
 
 $viewErrors = isset($errors)
     && is_array($errors)
-    ? $errors
-    : [];
+        ? $errors
+        : [];
 
 $viewFormData = isset($formData)
     && is_array($formData)
-    ? $formData
-    : [];
+        ? $formData
+        : [];
 
 $viewAppUrl = isset($appUrl)
     && is_string($appUrl)
-    ? rtrim($appUrl, '/')
-    : '';
+        ? rtrim($appUrl, '/')
+        : '';
 
 $viewCsrfToken = isset($csrfToken)
     && is_string($csrfToken)
-    ? $csrfToken
-    : '';
+        ? $csrfToken
+        : '';
 
 $empresaSelecionada =
     isset($viewFormData['empresa_id'])
     && is_scalar($viewFormData['empresa_id'])
-    ? (string) $viewFormData['empresa_id']
-    : '';
+        ? (string) $viewFormData['empresa_id']
+        : '';
 
 $produtoSelecionado =
     isset($viewFormData['produto_id'])
     && is_scalar($viewFormData['produto_id'])
-    ? (string) $viewFormData['produto_id']
-    : '';
+        ? (string) $viewFormData['produto_id']
+        : '';
 
 $planoSelecionado =
     isset($viewFormData['plano_id'])
     && is_scalar($viewFormData['plano_id'])
-    ? (string) $viewFormData['plano_id']
-    : '';
+        ? (string) $viewFormData['plano_id']
+        : '';
 
 $inicioEm =
     isset($viewFormData['inicio_em'])
     && is_string($viewFormData['inicio_em'])
-    ? $viewFormData['inicio_em']
-    : '';
+        ? $viewFormData['inicio_em']
+        : '';
 
 $produtos = [];
 
@@ -65,8 +65,8 @@ foreach ($viewCatalogo as $item) {
 
     $produtoId =
         isset($item['produto_id'])
-        ? (int) $item['produto_id']
-        : 0;
+            ? (int) $item['produto_id']
+            : 0;
 
     if ($produtoId <= 0) {
         continue;
@@ -76,15 +76,15 @@ foreach ($viewCatalogo as $item) {
         $produtos[$produtoId] = [
             'id' => $produtoId,
             'nome' =>
-            isset($item['produto_nome'])
+                isset($item['produto_nome'])
                 && is_string($item['produto_nome'])
-                ? $item['produto_nome']
-                : '',
+                    ? $item['produto_nome']
+                    : '',
             'codigo' =>
-            isset($item['produto_codigo'])
+                isset($item['produto_codigo'])
                 && is_string($item['produto_codigo'])
-                ? $item['produto_codigo']
-                : '',
+                    ? $item['produto_codigo']
+                    : '',
             'planos' => [],
         ];
     }
@@ -115,11 +115,12 @@ foreach ($viewCatalogo as $item) {
 
     <a
         href="<?= htmlspecialchars(
-                    $viewAppUrl . '/assinaturas',
-                    ENT_QUOTES,
-                    'UTF-8'
-                ) ?>"
-        class="button-secondary">
+            $viewAppUrl . '/assinaturas',
+            ENT_QUOTES,
+            'UTF-8'
+        ) ?>"
+        class="button-secondary"
+    >
         Voltar às assinaturas
     </a>
 
@@ -143,27 +144,30 @@ foreach ($viewCatalogo as $item) {
     <form
         method="POST"
         action="<?= htmlspecialchars(
-                    $viewAppUrl . '/assinaturas',
-                    ENT_QUOTES,
-                    'UTF-8'
-                ) ?>"
+            $viewAppUrl . '/assinaturas',
+            ENT_QUOTES,
+            'UTF-8'
+        ) ?>"
         class="form-content"
-        novalidate>
+        novalidate
+    >
 
         <input
             type="hidden"
             name="_token"
             value="<?= htmlspecialchars(
-                        $viewCsrfToken,
-                        ENT_QUOTES,
-                        'UTF-8'
-                    ) ?>">
+                $viewCsrfToken,
+                ENT_QUOTES,
+                'UTF-8'
+            ) ?>"
+        >
 
         <?php if ($viewErrors !== []): ?>
 
             <div
                 class="form-alert form-alert-error subscription-form-alert"
-                role="alert">
+                role="alert"
+            >
                 Revise os campos indicados antes de continuar.
             </div>
 
@@ -181,7 +185,8 @@ foreach ($viewCatalogo as $item) {
                 <select
                     id="empresa_id"
                     name="empresa_id"
-                    required>
+                    required
+                >
                     <option value="">
                         Selecione o cliente
                     </option>
@@ -196,8 +201,8 @@ foreach ($viewCatalogo as $item) {
 
                         $empresaId =
                             isset($empresa['id'])
-                            ? (int) $empresa['id']
-                            : 0;
+                                ? (int) $empresa['id']
+                                : 0;
 
                         if ($empresaId <= 0) {
                             continue;
@@ -206,19 +211,19 @@ foreach ($viewCatalogo as $item) {
                         $nomeFantasia =
                             isset($empresa['nome_fantasia'])
                             && is_string($empresa['nome_fantasia'])
-                            ? trim($empresa['nome_fantasia'])
-                            : '';
+                                ? trim($empresa['nome_fantasia'])
+                                : '';
 
                         $razaoSocial =
                             isset($empresa['razao_social'])
                             && is_string($empresa['razao_social'])
-                            ? trim($empresa['razao_social'])
-                            : '';
+                                ? trim($empresa['razao_social'])
+                                : '';
 
                         $label =
                             $nomeFantasia !== ''
-                            ? $nomeFantasia
-                            : $razaoSocial;
+                                ? $nomeFantasia
+                                : $razaoSocial;
 
                         ?>
 
@@ -226,7 +231,8 @@ foreach ($viewCatalogo as $item) {
                             value="<?= $empresaId ?>"
                             <?= $empresaSelecionada === (string) $empresaId
                                 ? 'selected'
-                                : '' ?>>
+                                : '' ?>
+                        >
                             <?= htmlspecialchars(
                                 $label,
                                 ENT_QUOTES,
@@ -265,7 +271,9 @@ foreach ($viewCatalogo as $item) {
                 <select
                     id="produto_id"
                     name="produto_id"
-                    required>
+                    data-product-select
+                    required
+                >
                     <option value="">
                         Selecione o produto
                     </option>
@@ -279,13 +287,13 @@ foreach ($viewCatalogo as $item) {
 
                         $produtoNome =
                             is_string($produto['nome'])
-                            ? $produto['nome']
-                            : '';
+                                ? $produto['nome']
+                                : '';
 
                         $produtoCodigo =
                             is_string($produto['codigo'])
-                            ? $produto['codigo']
-                            : '';
+                                ? $produto['codigo']
+                                : '';
 
                         ?>
 
@@ -293,13 +301,14 @@ foreach ($viewCatalogo as $item) {
                             value="<?= $produtoId ?>"
                             <?= $produtoSelecionado === (string) $produtoId
                                 ? 'selected'
-                                : '' ?>>
+                                : '' ?>
+                        >
                             <?= htmlspecialchars(
                                 $produtoNome
                                     . (
                                         $produtoCodigo !== ''
-                                        ? ' · ' . $produtoCodigo
-                                        : ''
+                                            ? ' · ' . $produtoCodigo
+                                            : ''
                                     ),
                                 ENT_QUOTES,
                                 'UTF-8'
@@ -334,141 +343,194 @@ foreach ($viewCatalogo as $item) {
                     Plano
                 </label>
 
-                <select
-                    id="plano_id"
-                    name="plano_id"
-                    required>
-                    <option value="">
-                        Selecione o plano
-                    </option>
+                <?php
 
-                    <?php foreach ($produtos as $produto): ?>
+                /*
+                 * Renderização inicial segura.
+                 *
+                 * O select mostra somente planos do produto atualmente
+                 * selecionado. Em uma primeira abertura, sem produto,
+                 * permanece desabilitado.
+                 *
+                 * Depois, o JavaScript apenas melhora a experiência.
+                 * O backend continua validando produto + plano.
+                 */
+                $planosProdutoSelecionado = [];
 
-                        <?php
+                if (
+                    $produtoSelecionado !== ''
+                    && ctype_digit(
+                        $produtoSelecionado
+                    )
+                ) {
+                    $produtoSelecionadoId =
+                        (int) $produtoSelecionado;
 
-                        $produtoNome =
-                            is_string($produto['nome'])
-                            ? $produto['nome']
-                            : '';
+                    if (
+                        isset(
+                            $produtos[
+                                $produtoSelecionadoId
+                            ]['planos']
+                        )
+                        && is_array(
+                            $produtos[
+                                $produtoSelecionadoId
+                            ]['planos']
+                        )
+                    ) {
+                        $planosProdutoSelecionado =
+                            $produtos[
+                                $produtoSelecionadoId
+                            ]['planos'];
+                    }
+                }
 
-                        $planos =
-                            isset($produto['planos'])
-                            && is_array($produto['planos'])
-                            ? $produto['planos']
-                            : [];
+                $formatarPlanoLabel =
+                    static function (
+                        array $plano
+                    ): string {
+                        $planoNome =
+                            isset($plano['plano_nome'])
+                            && is_string(
+                                $plano['plano_nome']
+                            )
+                                ? $plano['plano_nome']
+                                : '';
 
-                        ?>
+                        $planoCodigo =
+                            isset($plano['plano_codigo'])
+                            && is_string(
+                                $plano['plano_codigo']
+                            )
+                                ? $plano['plano_codigo']
+                                : '';
 
-                        <optgroup
-                            label="<?= htmlspecialchars(
-                                        $produtoNome,
-                                        ENT_QUOTES,
-                                        'UTF-8'
-                                    ) ?>">
+                        $periodicidade =
+                            isset($plano['periodicidade'])
+                            && is_string(
+                                $plano['periodicidade']
+                            )
+                                ? $plano['periodicidade']
+                                : '';
 
-                            <?php foreach ($planos as $plano): ?>
+                        $valor =
+                            isset($plano['valor'])
+                            && is_numeric(
+                                $plano['valor']
+                            )
+                                ? (float) $plano['valor']
+                                : 0.0;
 
-                                <?php
+                        $moeda =
+                            isset($plano['moeda'])
+                            && is_string(
+                                $plano['moeda']
+                            )
+                                ? $plano['moeda']
+                                : 'BRL';
 
-                                if (!is_array($plano)) {
-                                    continue;
-                                }
-
-                                $planoId =
-                                    isset($plano['plano_id'])
-                                    ? (int) $plano['plano_id']
-                                    : 0;
-
-                                if ($planoId <= 0) {
-                                    continue;
-                                }
-
-                                $planoNome =
-                                    isset($plano['plano_nome'])
-                                    && is_string($plano['plano_nome'])
-                                    ? $plano['plano_nome']
-                                    : '';
-
-                                $planoCodigo =
-                                    isset($plano['plano_codigo'])
-                                    && is_string($plano['plano_codigo'])
-                                    ? $plano['plano_codigo']
-                                    : '';
-
-                                $periodicidade =
-                                    isset($plano['periodicidade'])
-                                    && is_string($plano['periodicidade'])
-                                    ? $plano['periodicidade']
-                                    : '';
-
-                                $valor =
-                                    isset($plano['valor'])
-                                    && is_numeric($plano['valor'])
-                                    ? (float) $plano['valor']
-                                    : 0.0;
-
-                                $moeda =
-                                    isset($plano['moeda'])
-                                    && is_string($plano['moeda'])
-                                    ? $plano['moeda']
-                                    : 'BRL';
-
-                                $valorLabel =
-                                    $moeda === 'BRL'
-                                    ? 'R$ ' . number_format(
+                        $valorLabel =
+                            $moeda === 'BRL'
+                                ? 'R$ '
+                                    . number_format(
                                         $valor,
                                         2,
                                         ',',
                                         '.'
                                     )
-                                    : $moeda . ' ' . number_format(
+                                : $moeda
+                                    . ' '
+                                    . number_format(
                                         $valor,
                                         2,
                                         ',',
                                         '.'
                                     );
 
-                                ?>
+                        return $planoNome
+                            . (
+                                $planoCodigo !== ''
+                                    ? ' · ' . $planoCodigo
+                                    : ''
+                            )
+                            . ' · '
+                            . $valorLabel
+                            . (
+                                $periodicidade !== ''
+                                    ? ' · '
+                                        . $periodicidade
+                                    : ''
+                            );
+                    };
 
-                                <option
-                                    value="<?= $planoId ?>"
-                                    <?= $planoSelecionado === (string) $planoId
-                                        ? 'selected'
-                                        : '' ?>>
-                                    <?= htmlspecialchars(
-                                        $planoNome
-                                            . (
-                                                $planoCodigo !== ''
-                                                ? ' · ' . $planoCodigo
-                                                : ''
-                                            )
-                                            . ' · '
-                                            . $valorLabel
-                                            . (
-                                                $periodicidade !== ''
-                                                ? ' · ' . $periodicidade
-                                                : ''
-                                            ),
-                                        ENT_QUOTES,
-                                        'UTF-8'
-                                    ) ?>
-                                </option>
+                ?>
 
-                            <?php endforeach; ?>
+                <select
+                    id="plano_id"
+                    name="plano_id"
+                    data-plan-select
+                    <?= $produtoSelecionado === ''
+                        ? 'disabled'
+                        : '' ?>
+                    required
+                >
+                    <option value="">
+                        <?= $produtoSelecionado === ''
+                            ? 'Selecione primeiro o produto'
+                            : 'Selecione o plano' ?>
+                    </option>
 
-                        </optgroup>
+                    <?php foreach (
+                        $planosProdutoSelecionado
+                        as $plano
+                    ): ?>
+
+                        <?php
+
+                        if (!is_array($plano)) {
+                            continue;
+                        }
+
+                        $planoId =
+                            isset($plano['plano_id'])
+                                ? (int) $plano['plano_id']
+                                : 0;
+
+                        if ($planoId <= 0) {
+                            continue;
+                        }
+
+                        ?>
+
+                        <option
+                            value="<?= $planoId ?>"
+                            <?= $planoSelecionado
+                                === (string) $planoId
+                                    ? 'selected'
+                                    : '' ?>
+                        >
+                            <?= htmlspecialchars(
+                                $formatarPlanoLabel(
+                                    $plano
+                                ),
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>
+                        </option>
 
                     <?php endforeach; ?>
 
                 </select>
 
                 <span class="field-hint">
-                    O backend confirmará se o plano pertence ao produto selecionado.
+                    São exibidos somente os planos disponíveis para o produto selecionado.
                 </span>
 
                 <?php if (
                     isset($viewErrors['plano_id'])
-                    && is_string($viewErrors['plano_id'])
+                    && is_string(
+                        $viewErrors['plano_id']
+                    )
                 ): ?>
 
                     <span class="field-error">
@@ -480,6 +542,83 @@ foreach ($viewCatalogo as $item) {
                     </span>
 
                 <?php endif; ?>
+
+
+                <!--
+                    Catálogo inerte usado somente pela interface.
+
+                    Não há JavaScript inline.
+                    O Service revalida a relação produto/plano
+                    independentemente do conteúdo abaixo.
+                -->
+                <template id="assinatura-planos-template">
+
+                    <?php foreach (
+                        $produtos
+                        as $produto
+                    ): ?>
+
+                        <?php
+
+                        $produtoId =
+                            isset($produto['id'])
+                                ? (int) $produto['id']
+                                : 0;
+
+                        $planos =
+                            isset($produto['planos'])
+                            && is_array(
+                                $produto['planos']
+                            )
+                                ? $produto['planos']
+                                : [];
+
+                        if ($produtoId <= 0) {
+                            continue;
+                        }
+
+                        ?>
+
+                        <?php foreach (
+                            $planos
+                            as $plano
+                        ): ?>
+
+                            <?php
+
+                            if (!is_array($plano)) {
+                                continue;
+                            }
+
+                            $planoId =
+                                isset($plano['plano_id'])
+                                    ? (int) $plano['plano_id']
+                                    : 0;
+
+                            if ($planoId <= 0) {
+                                continue;
+                            }
+
+                            ?>
+
+                            <option
+                                value="<?= $planoId ?>"
+                                data-produto-id="<?= $produtoId ?>"
+                            >
+                                <?= htmlspecialchars(
+                                    $formatarPlanoLabel(
+                                        $plano
+                                    ),
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                ) ?>
+                            </option>
+
+                        <?php endforeach; ?>
+
+                    <?php endforeach; ?>
+
+                </template>
 
             </div>
 
@@ -495,11 +634,12 @@ foreach ($viewCatalogo as $item) {
                     id="inicio_em"
                     name="inicio_em"
                     value="<?= htmlspecialchars(
-                                $inicioEm,
-                                ENT_QUOTES,
-                                'UTF-8'
-                            ) ?>"
-                    required>
+                        $inicioEm,
+                        ENT_QUOTES,
+                        'UTF-8'
+                    ) ?>"
+                    required
+                >
 
                 <span class="field-hint">
                     A ativação e a próxima cobrança serão tratadas em uma etapa posterior.
@@ -542,17 +682,19 @@ foreach ($viewCatalogo as $item) {
 
             <a
                 href="<?= htmlspecialchars(
-                            $viewAppUrl . '/assinaturas',
-                            ENT_QUOTES,
-                            'UTF-8'
-                        ) ?>"
-                class="button-secondary">
+                    $viewAppUrl . '/assinaturas',
+                    ENT_QUOTES,
+                    'UTF-8'
+                ) ?>"
+                class="button-secondary"
+            >
                 Cancelar
             </a>
 
             <button
                 type="submit"
-                class="button-primary">
+                class="button-primary"
+            >
                 Criar assinatura
             </button>
 

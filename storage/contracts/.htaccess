@@ -1,0 +1,11 @@
+# Defesa em profundidade.
+# O diretório storage/contracts já deve estar fora de public/.
+# Caso alguma configuração de servidor o exponha acidentalmente,
+# este arquivo bloqueia acesso HTTP quando Apache processar .htaccess.
+
+Require all denied
+
+<IfModule mod_access_compat.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

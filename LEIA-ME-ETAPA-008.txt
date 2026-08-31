@@ -1,0 +1,34 @@
+INIT SAAS PLATFORM
+ETAPA 008 - REPOSITORY + SERVICE DOCUMENTAL
+
+Arquivos novos:
+- app/Repositories/DocumentoContratualRepository.php
+- app/Repositories/AssinaturaDocumentoRepository.php
+- app/Services/DocumentoContratualService.php
+
+Nesta etapa:
+- não há Controller;
+- não há rota;
+- não há view;
+- não há upload público;
+- não há integração com Autentique ainda;
+- AssinaturaService::ativar() ainda NÃO foi alterado.
+
+O backend já está preparado para:
+1. Resolver documentos globais e específicos por produto.
+2. Fazer documento específico prevalecer sobre global do mesmo tipo.
+3. Verificar quais termos obrigatórios ainda faltam para ativação.
+4. Registrar documento original já armazenado de forma privada.
+5. Marcar envio manual para AUTENTIQUE/ZAPSIGN/OUTRO.
+6. Registrar PDF assinado manualmente.
+7. Validar que o signatário pertence à empresa e está ativo.
+8. Cancelar tentativa documental não assinada.
+9. Auditar todas as transições.
+10. Preservar storage keys e hashes somente no backend.
+
+IMPORTANTE SOBRE ARQUIVOS:
+- O navegador nunca deve informar storage_key ou SHA-256 diretamente.
+- A próxima camada de storage/upload calculará SHA-256 no backend.
+- Os PDFs ficarão fora de public/.
+
+Nenhum arquivo existente precisa ser substituído nesta etapa.

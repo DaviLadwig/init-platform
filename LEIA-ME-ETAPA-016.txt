@@ -1,0 +1,68 @@
+INIT SAAS PLATFORM
+ETAPA 016 - CLIENTES: CNPJ COM MÁSCARA + SLUG TÉCNICO
+
+OBJETIVO
+
+1. Remover o campo Slug das telas de cadastro e edição.
+2. Manter o slug no banco como identificador técnico NOT NULL + UNIQUE.
+3. Gerar o slug somente no backend ao criar um cliente.
+4. Preservar o slug existente nas edições.
+5. Aplicar máscara automática de CNPJ:
+   00.000.000/0000-00
+6. Salvar no PostgreSQL somente os 14 números.
+
+ARQUIVOS
+
+app/Controllers/ClienteController.php
+views/clientes/create.php
+views/clientes/edit.php
+views/layouts/main.php
+public/js/clientes.js
+
+NÃO HÁ MIGRATION
+
+A estrutura da tabela empresas não muda.
+
+SEGURANÇA
+
+- slug enviado manualmente pelo navegador é ignorado;
+- slug é gerado no backend;
+- CNPJ é normalizado novamente no backend;
+- JavaScript é somente uma melhoria de UX;
+- nenhuma regra depende apenas do frontend;
+- CSRF e validações do Service continuam valendo;
+- o slug não muda quando razão social/nome fantasia são editados.
+
+FORMATO DO SLUG
+
+Exemplo aproximado:
+
+conquista-contabilidade-3d5b78e66f15
+
+O sufixo é derivado de SHA-256 do CNPJ.
+O CNPJ completo não fica exposto dentro do slug.
+
+TESTE
+
+1. Abra Clientes > Novo cliente.
+2. Confirme que o campo Slug não existe.
+3. Digite no CNPJ:
+   43343891000191
+4. Visualmente deve ficar:
+   43.343.891/0001-91
+5. Cadastre o cliente.
+6. Consulte o banco:
+   - cnpj deve possuir apenas 14 números;
+   - slug deve ter sido criado automaticamente.
+7. Edite o cliente:
+   - CNPJ deve abrir formatado;
+   - Slug não deve aparecer.
+8. Altere nome fantasia/razão social e salve.
+9. Confira no banco que o slug anterior permaneceu igual.
+
+VALIDAÇÃO PHP
+
+php -l app\Controllers\ClienteController.php
+php -l views\clientes\create.php
+php -l views\clientes\edit.php
+php -l views\layouts\main.php

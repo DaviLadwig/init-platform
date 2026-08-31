@@ -1,0 +1,96 @@
+INIT SAAS PLATFORM
+ETAPA 010 - INTEGRAÇÃO DOCUMENTOS + STORAGE
+
+Pacote consolidado:
+- app/Repositories/DocumentoContratualRepository.php
+- app/Repositories/AssinaturaDocumentoRepository.php
+- app/Services/ContratoStorageService.php
+- app/Services/DocumentoContratualService.php
+- bin/verificar-storage-contratos.php
+- storage/contracts/.htaccess
+- storage/contracts/.gitignore
+
+ALTERAÇÃO PRINCIPAL
+
+DocumentoContratualService agora recebe também:
+
+ContratoStorageService $storage
+
+O Service passou a orquestrar o fluxo de arquivo + banco.
+
+NOVOS MÉTODOS
+
+1. registrarOriginalUpload()
+   Recebe $_FILES do Controller futuro.
+   O browser NÃO informa storage_key, hash, tamanho ou MIME.
+
+2. registrarOriginalGeradoPeloBackend()
+   Para o futuro Termo de Contratação gerado automaticamente pela Init.
+
+3. registrarAssinadoUploadManual()
+   Recebe o PDF final baixado do Autentique.
+   Confere se o documento pertence à assinatura informada.
+   Armazena em área privada.
+   Calcula SHA-256.
+   Depois registra ASSINADO.
+
+4. resolverDownload()
+   Resolve ORIGINAL ou ASSINADO apenas depois de confirmar:
+   - documento existe;
+   - pertence à assinatura da rota;
+   - storage key existe;
+   - SHA-256 atual corresponde ao banco.
+
+ROLLBACK DE ARQUIVO
+
+Como filesystem e PostgreSQL não compartilham a mesma transação:
+
+- primeiro o PDF é armazenado;
+- depois o banco é atualizado;
+- se o banco rejeitar/falhar antes do commit,
+  removeUncommitted() apaga somente o arquivo recém-criado.
+
+Isso evita arquivos órfãos no storage.
+
+SEGURANÇA
+
+- Documento de outra assinatura retorna not_found.
+- Não há URL pública.
+- Não há download HTTP nesta etapa.
+- Não há Controller nem rota ainda.
+- Não há interface.
+- Não há API do Autentique ainda.
+- AssinaturaService::ativar() ainda não foi alterado.
+
+INSTALAÇÃO
+
+Substitua:
+app/Services/DocumentoContratualService.php
+
+Mantenha/adicione os demais arquivos do pacote conforme as etapas 008/009.
+
+VALIDAÇÃO
+
+php -l app\Services\DocumentoContratualService.php
+php -l app\Services\ContratoStorageService.php
+php -l app\Repositories\DocumentoContratualRepository.php
+php -l app\Repositories\AssinaturaDocumentoRepository.php
+php -l bin\verificar-storage-contratos.php
+
+php bin\verificar-storage-contratos.php
+
+OBSERVAÇÃO
+
+Na próxima etapa, qualquer local que instanciar DocumentoContratualService
+deverá usar:
+
+new DocumentoContratualService(
+    new DocumentoContratualRepository(),
+    new AssinaturaDocumentoRepository(),
+    new AssinaturaRepository(),
+    new AuditLogRepository(),
+    new ContratoStorageService()
+);
+
+Como ainda não criamos Controller para este Service, nenhum arquivo atual
+do fluxo web precisa ser alterado nesta etapa.

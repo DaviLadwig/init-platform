@@ -1,0 +1,76 @@
+INIT SAAS PLATFORM
+ETAPA 014 - AJUSTE DA DATA DA ASSINATURA DOCUMENTAL
+
+MOTIVO DO AJUSTE
+
+No teste manual, o documento foi marcado como enviado ao Autentique em
+30/08/2026 16:01 e foi informada assinatura em 30/08/2026 10:10.
+
+A constraint antiga exigia:
+assinado_em >= enviado_em
+
+Por isso o PostgreSQL rejeitou o UPDATE e a aplicação respondeu 500.
+
+Além disso, no fluxo manual não faz sentido obrigar o administrador a
+inventar um horário exato de assinatura.
+
+NOVO MODELO
+
+- assinado_data DATE:
+  data civil da assinatura, usada no fluxo manual.
+
+- assinado_em TIMESTAMPTZ:
+  continua existindo, mas fica reservado para uma futura integração
+  via API/webhook quando o provedor fornecer timestamp confiável.
+
+MIGRATION
+
+Execute:
+database/migrations/010_data_assinatura_documento.sql
+
+A própria migration já contém as consultas de verificação no final.
+
+INTERFACE
+
+Antes:
+Assinado em
+[30/08/2026 10:10]
+
+Agora:
+Data da assinatura
+[30/08/2026]
+
+REGRAS
+
+- data não pode estar no futuro;
+- data não pode ser anterior à data do envio ao Autentique;
+- a mesma data do envio é permitida, independentemente do horário;
+- documento continua exigindo PDF válido;
+- SHA-256 continua calculado no backend;
+- documento ASSINADO continua imutável.
+
+SIMULAÇÃO
+
+Para o teste técnico, o PDF NÃO precisa possuir uma assinatura real.
+O sistema atual valida o arquivo PDF e o fluxo de estados, mas não
+verifica criptograficamente se o Autentique assinou o arquivo.
+
+Em produção, naturalmente, deve ser anexado o PDF final realmente
+assinado e baixado do Autentique.
+
+ARQUIVOS ALTERADOS
+
+- database/migrations/010_data_assinatura_documento.sql
+- app/Repositories/AssinaturaDocumentoRepository.php
+- app/Services/DocumentoContratualService.php
+- app/Controllers/DocumentoContratualController.php
+- views/assinaturas/show.php
+
+VALIDAÇÃO
+
+php -l app\Repositories\AssinaturaDocumentoRepository.php
+php -l app\Services\DocumentoContratualService.php
+php -l app\Controllers\DocumentoContratualController.php
+php -l views\assinaturas\show.php
+
+Depois teste novamente o registro do documento assinado.

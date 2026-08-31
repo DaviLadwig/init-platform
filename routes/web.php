@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Controllers\AuthController;
 use App\Controllers\AssinaturaController;
 use App\Controllers\ClienteController;
+use App\Controllers\DocumentoContratualController;
 use App\Controllers\EmpresaResponsavelController;
 use App\Controllers\HomeController;
 use App\Controllers\PlanoController;
@@ -575,6 +576,98 @@ $router->post(
     ]
 );
 
+
+
+
+$router->post(
+    '/assinaturas/{id}/documentos',
+    [
+        DocumentoContratualController::class,
+        'storeOriginal',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+$router->post(
+    '/assinaturas/{id}/documentos/{documentoId}/enviar-autentique',
+    [
+        DocumentoContratualController::class,
+        'markSentToAutentique',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+$router->post(
+    '/assinaturas/{id}/documentos/{documentoId}/assinado',
+    [
+        DocumentoContratualController::class,
+        'storeSigned',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+$router->post(
+    '/assinaturas/{id}/documentos/{documentoId}/cancelar',
+    [
+        DocumentoContratualController::class,
+        'cancelAttempt',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+$router->get(
+    '/assinaturas/{id}/documentos/{documentoId}/original',
+    [
+        DocumentoContratualController::class,
+        'downloadOriginal',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+$router->get(
+    '/assinaturas/{id}/documentos/{documentoId}/assinado',
+    [
+        DocumentoContratualController::class,
+        'downloadSigned',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
 
 
 $router->get(

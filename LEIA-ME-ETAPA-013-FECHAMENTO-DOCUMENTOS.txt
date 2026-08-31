@@ -1,0 +1,143 @@
+INIT SAAS PLATFORM
+ETAPA 013 - FECHAMENTO DO MÓDULO DOCUMENTAL
+
+Esta etapa fecha Documentos Contratuais para o MVP.
+
+O QUE MUDA
+
+1. AssinaturaService::ativar() agora verifica documentos obrigatórios.
+2. AssinaturaRepository resolve os documentos aplicáveis ao produto.
+3. PostgreSQL repete a regra através da migration 009.
+4. A interface não oferece ativação enquanto a documentação estiver pendente.
+5. Assinaturas que já estavam ATIVAS não são desativadas retroativamente.
+6. Reativação por pagamento de ATRASADA/SUSPENSA continua independente
+   de nova assinatura documental.
+
+MIGRATION OBRIGATÓRIA
+
+database/migrations/009_bloqueio_documental_ativacao.sql
+
+Depois, opcionalmente rode:
+
+database/migrations/verificar_009_bloqueio_documental.sql
+
+REGRA FINAL
+
+PENDENTE_ATIVACAO
+        |
+        v
+há documento obrigatório ativo?
+        |
+        +-- NÃO --> pode ativar
+        |
+        +-- SIM
+             |
+             v
+     todos os aplicáveis estão ASSINADOS?
+             |
+             +-- NÃO --> BLOQUEIA
+             |
+             +-- SIM --> ATIVA
+
+PRECEDÊNCIA DE TERMOS
+
+Documento específico do produto prevalece sobre global do mesmo tipo.
+
+Exemplo:
+
+GLOBAL / TERMO_CONTRATACAO_SAAS / 1.0
+INIT_CLINIC / TERMO_CONTRATACAO_SAAS / 2.0
+
+Para Init Clinic:
+a versão 2.0 é a obrigatória.
+
+TIPOS DIFERENTES SÃO CUMULATIVOS
+
+Exemplo:
+TERMO_CONTRATACAO_SAAS
++
+ACORDO_TRATAMENTO_DADOS
+
+Se ambos estiverem ativos e obrigatórios, ambos devem estar ASSINADOS.
+
+TESTE FINAL RECOMENDADO
+
+A. FLUXO DOCUMENTAL
+
+1. Documento em GERADO.
+2. Baixar original.
+3. Enviar manualmente ao Autentique.
+4. Marcar envio ao Autentique.
+5. Confirmar AGUARDANDO_ASSINATURA.
+6. Assinar no Autentique.
+7. Baixar o PDF final.
+8. Anexar PDF assinado na Init.
+9. Confirmar ASSINADO.
+10. Testar Baixar assinado.
+
+B. TENTATIVA CANCELADA
+
+1. Em uma tentativa GERADO/AGUARDANDO_ASSINATURA, cancelar.
+2. Confirmar que aparece no histórico.
+3. Confirmar que uma nova tentativa da mesma versão pode ser criada.
+
+C. BLOQUEIO DE ATIVAÇÃO
+
+Use uma assinatura de TESTE em PENDENTE_ATIVACAO.
+
+1. Sem termo assinado:
+   - botão deve indicar Aguardando documentação;
+   - backend deve bloquear qualquer POST de ativação.
+
+2. Depois do termo ASSINADO:
+   - botão Ativar assinatura aparece;
+   - ativação deve funcionar.
+
+DEFESA NO BANCO
+
+A migration cria:
+
+trg_validar_documentos_ativacao_assinatura
+
+Mesmo que alguém tente diretamente:
+
+UPDATE assinaturas
+SET status = 'ATIVA'
+WHERE id = ...;
+
+o PostgreSQL rejeita a primeira ativação quando houver documento
+obrigatório pendente.
+
+SQLSTATE específico:
+P7501
+
+Isso evita depender apenas de frontend ou Service.
+
+VALIDAÇÃO PHP
+
+php -l app\Repositories\AssinaturaRepository.php
+php -l app\Services\AssinaturaService.php
+php -l views\assinaturas\show.php
+
+Também recomendamos repetir:
+
+php -l app\Controllers\AssinaturaController.php
+php -l app\Controllers\DocumentoContratualController.php
+php -l app\Services\DocumentoContratualService.php
+php -l app\Services\ContratoStorageService.php
+php -l routes\web.php
+
+php bin\verificar-storage-contratos.php
+
+APÓS OS TESTES ACIMA
+
+O módulo Documentos Contratuais pode ser considerado concluído para o MVP.
+
+Futuro, fora deste fechamento:
+- API automática do Autentique;
+- webhook;
+- geração automática do conteúdo jurídico;
+- múltiplos provedores;
+- S3 privado em produção.
+
+O próximo módulo funcional pode então ser Financeiro.

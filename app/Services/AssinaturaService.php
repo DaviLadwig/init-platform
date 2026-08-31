@@ -531,6 +531,56 @@ final class AssinaturaService
                 ];
             }
 
+            /*
+             * Documentação contratual obrigatória.
+             *
+             * Esta é a validação amigável da aplicação.
+             * A migration 009 repete a regra no PostgreSQL como
+             * defesa final contra bypass ou concorrência.
+             */
+            $documentosPendentes =
+                $this->assinaturas
+                    ->findMissingRequiredDocumentsForActivation(
+                        $assinaturaId,
+                        $produtoId
+                    );
+
+            if ($documentosPendentes !== []) {
+                $pdo->rollBack();
+
+                return [
+                    'success' => false,
+                    'not_found' => false,
+                    'message' =>
+                        'A assinatura não pode ser ativada enquanto houver documento contratual obrigatório pendente.',
+                    'documentacao_pendente' => true,
+                    'documentos_pendentes' =>
+                        array_map(
+                            static function (array $documento): array {
+                                return [
+                                    'id' =>
+                                        isset($documento['id'])
+                                            ? (int) $documento['id']
+                                            : 0,
+
+                                    'titulo' =>
+                                        isset($documento['titulo'])
+                                        && is_string($documento['titulo'])
+                                            ? $documento['titulo']
+                                            : 'Documento contratual',
+
+                                    'versao' =>
+                                        isset($documento['versao'])
+                                        && is_string($documento['versao'])
+                                            ? $documento['versao']
+                                            : '',
+                                ];
+                            },
+                            $documentosPendentes
+                        ),
+                ];
+            }
+
             $inicioEm =
                 $this->stringValue(
                     $assinatura,
@@ -640,6 +690,29 @@ final class AssinaturaService
                 'message' =>
                     'Assinatura ativada com sucesso.',
             ];
+        } catch (PDOException $exception) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            /*
+             * Defesa de banco da migration 009.
+             *
+             * Em uma condição de corrida ou tentativa de bypass,
+             * o PostgreSQL continua impedindo a ativação e nós
+             * retornamos uma mensagem segura ao administrador.
+             */
+            if ($exception->getCode() === 'P7501') {
+                return [
+                    'success' => false,
+                    'not_found' => false,
+                    'message' =>
+                        'A assinatura não pode ser ativada enquanto houver documento contratual obrigatório pendente.',
+                    'documentacao_pendente' => true,
+                ];
+            }
+
+            throw $exception;
         } catch (Throwable $exception) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();

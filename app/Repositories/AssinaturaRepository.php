@@ -825,6 +825,97 @@ final class AssinaturaRepository
             !== false;
     }
 
+
+    /**
+     * Retorna documentos obrigatórios ainda não assinados para
+     * a primeira ativação da assinatura.
+     *
+     * Regra de precedência:
+     * - versão específica do produto prevalece sobre a global
+     *   do mesmo tipo;
+     * - tipos diferentes são cumulativos.
+     *
+     * O método retorna somente metadados necessários para a regra
+     * de negócio, sem storage keys, hashes ou dados do signatário.
+     */
+    public function findMissingRequiredDocumentsForActivation(
+        int $assinaturaId,
+        int $produtoId
+    ): array {
+        $pdo = Database::connection();
+
+        $statement = $pdo->prepare(
+            '
+            WITH documentos_aplicaveis AS (
+                SELECT DISTINCT ON (dc.tipo)
+                    dc.id,
+                    dc.tipo,
+                    dc.titulo,
+                    dc.versao
+                FROM public.documentos_contratuais AS dc
+                WHERE dc.ativo = TRUE
+                  AND dc.obrigatorio_ativacao = TRUE
+                  AND (
+                        dc.produto_id IS NULL
+                        OR dc.produto_id = :produto_id_scope
+                  )
+                ORDER BY
+                    dc.tipo ASC,
+                    CASE
+                        WHEN dc.produto_id = :produto_id_order
+                            THEN 0
+                        ELSE 1
+                    END ASC,
+                    dc.id DESC
+            )
+            SELECT
+                da.id,
+                da.tipo,
+                da.titulo,
+                da.versao
+            FROM documentos_aplicaveis AS da
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM public.assinatura_documentos AS ad
+                WHERE ad.assinatura_id = :assinatura_id
+                  AND ad.documento_contratual_id = da.id
+                  AND ad.status = \'ASSINADO\'
+            )
+            ORDER BY
+                da.tipo ASC,
+                da.id ASC
+            '
+        );
+
+        $statement->bindValue(
+            ':produto_id_scope',
+            $produtoId,
+            PDO::PARAM_INT
+        );
+
+        $statement->bindValue(
+            ':produto_id_order',
+            $produtoId,
+            PDO::PARAM_INT
+        );
+
+        $statement->bindValue(
+            ':assinatura_id',
+            $assinaturaId,
+            PDO::PARAM_INT
+        );
+
+        $statement->execute();
+
+        $rows = $statement->fetchAll(
+            PDO::FETCH_ASSOC
+        );
+
+        return is_array($rows)
+            ? $rows
+            : [];
+    }
+
     /**
      * Ativa uma assinatura que ainda está pendente.
      *

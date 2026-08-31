@@ -1,0 +1,88 @@
+INIT SAAS PLATFORM
+ETAPA 019 - PLANOS FILTRADOS PELO PRODUTO
+
+PROBLEMA
+
+No cadastro de Nova assinatura, o select Produto podia estar em:
+
+Init RH
+
+enquanto o select Plano exibiria simultaneamente:
+
+- planos do Init RH;
+- planos do Init Clinic;
+- planos de futuros produtos.
+
+Isso não representa corretamente o catálogo comercial.
+
+CORREÇÃO
+
+Agora:
+
+Produto = Init RH
+→ o campo Plano exibe somente planos ativos do Init RH.
+
+Produto = Init Clinic
+→ o campo Plano exibe somente planos ativos do Init Clinic.
+
+Sem produto selecionado:
+→ Plano fica desabilitado com:
+  "Selecione primeiro o produto".
+
+Se o usuário trocar de produto:
+→ a seleção anterior de plano é descartada;
+→ o select é reconstruído somente com planos do novo produto.
+
+SEGURANÇA
+
+A melhoria do select NÃO substitui a validação do backend.
+
+O AssinaturaService já chama:
+
+findActivePlan($produtoId, $planoId)
+
+e rejeita um plano que não pertença ao produto.
+
+O banco também possui vínculo produto/plano na assinatura.
+
+Portanto:
+
+FRONTEND
+→ mostra somente opções coerentes.
+
+BACKEND
+→ confirma novamente produto + plano.
+
+BANCO
+→ permanece como defesa final.
+
+ARQUIVOS
+
+app/Controllers/AssinaturaController.php
+views/assinaturas/create.php
+public/js/assinaturas.js
+
+NÃO HÁ MIGRATION.
+
+IMPORTANTE
+
+O main.php atual já possui suporte a pageScripts desde a melhoria
+de Clientes. Não substitua o main.php nesta etapa.
+
+VALIDAÇÃO
+
+php -l app\Controllers\AssinaturaController.php
+php -l views\assinaturas\create.php
+
+TESTE
+
+1. Abra Assinaturas > Nova assinatura.
+2. Sem produto:
+   Plano deve ficar desabilitado.
+3. Selecione Init RH:
+   devem aparecer somente os planos do Init RH.
+4. Selecione Init Clinic:
+   devem aparecer somente os planos do Init Clinic.
+5. Troque de RH para Clinic depois de escolher um plano:
+   o plano antigo deve ser limpo.
+6. Crie uma assinatura normalmente.

@@ -1,0 +1,94 @@
+INIT SAAS PLATFORM
+ETAPA 011 - CONTROLLER + ROTAS SEGURAS DE DOCUMENTOS
+
+ARQUIVOS PRINCIPAIS
+
+Novo:
+- app/Controllers/DocumentoContratualController.php
+
+Atualizado:
+- app/Services/DocumentoContratualService.php
+- routes/web.php
+
+O pacote também traz os arquivos consolidados das etapas 008–010.
+
+ROTAS CRIADAS
+
+POST /assinaturas/{id}/documentos
+- registra PDF original
+- SUPER_ADMIN
+- CSRF
+- arquivo: documento_pdf
+- campos: documento_contratual_id, responsavel_id
+
+POST /assinaturas/{id}/documentos/{documentoId}/enviar-autentique
+- NÃO chama API
+- apenas registra que o admin enviou manualmente ao Autentique
+- provider AUTENTIQUE é fixado pelo backend
+- exige responsável ativo já definido
+
+POST /assinaturas/{id}/documentos/{documentoId}/assinado
+- recebe PDF assinado
+- arquivo: documento_assinado_pdf
+- campos: responsavel_id, assinado_em
+- valida vínculo assinatura/documento
+- valida que signatário pertence ao cliente
+- se o documento já tinha responsável, exige o mesmo responsável
+
+POST /assinaturas/{id}/documentos/{documentoId}/cancelar
+- cancela tentativa ainda não assinada
+
+GET /assinaturas/{id}/documentos/{documentoId}/original
+GET /assinaturas/{id}/documentos/{documentoId}/assinado
+- download autenticado
+- SUPER_ADMIN
+- SHA-256 conferido antes de abrir o arquivo
+- sem URL pública
+- Cache-Control private/no-store
+- X-Content-Type-Options nosniff
+
+PROTEÇÃO CONTEXTUAL / IDOR
+
+Todas as mutações documentais agora recebem assinatura_id + documento_id
+e validam o vínculo dentro do Service.
+
+Um documento de outra assinatura é tratado como não encontrado.
+
+IMPORTANTE
+
+Ainda NÃO existe interface para chamar essas rotas.
+Ainda NÃO conectamos o bloqueio documental ao AssinaturaService::ativar().
+Ainda NÃO há API do Autentique.
+
+INSTALAÇÃO
+
+1. Adicione:
+   app/Controllers/DocumentoContratualController.php
+
+2. Substitua pelos arquivos consolidados:
+   app/Services/DocumentoContratualService.php
+   routes/web.php
+
+3. Os demais arquivos permanecem iguais às etapas 008–010.
+
+VALIDAÇÃO
+
+php -l app\Controllers\DocumentoContratualController.php
+php -l app\Services\DocumentoContratualService.php
+php -l app\Services\ContratoStorageService.php
+php -l app\Repositories\DocumentoContratualRepository.php
+php -l app\Repositories\AssinaturaDocumentoRepository.php
+php -l routes\web.php
+php -l bin\verificar-storage-contratos.php
+
+php bin\verificar-storage-contratos.php
+
+PRÓXIMA ETAPA
+
+Etapa 012:
+- catálogo/versão inicial do Termo de Contratação;
+- interface documental dentro de "Ver assinatura";
+- fluxo manual Autentique utilizável de ponta a ponta.
+
+Somente depois de testar esse fluxo:
+- bloquear Ativar enquanto termo obrigatório estiver pendente.

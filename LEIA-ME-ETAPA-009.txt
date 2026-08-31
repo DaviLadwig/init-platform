@@ -1,0 +1,88 @@
+INIT SAAS PLATFORM
+ETAPA 009 - STORAGE PRIVADO DE CONTRATOS
+
+Arquivos:
+- app/Services/ContratoStorageService.php
+- bin/verificar-storage-contratos.php
+- storage/contracts/.htaccess
+- storage/contracts/.gitignore
+
+OBJETIVO
+
+Criar a camada privada de armazenamento antes de qualquer Controller
+ou tela de upload.
+
+REGRAS IMPLEMENTADAS
+
+1. Contratos ficam em:
+   storage/contracts/
+
+2. Nunca em:
+   public/
+   public/uploads/
+
+3. Organização automática:
+   storage/contracts/
+   └── empresa-{id}/
+       └── assinatura-{id}/
+           ├── original/
+           └── assinado/
+
+4. O nome do arquivo é aleatório e controlado pelo backend.
+   O nome enviado pelo navegador não é usado como nome físico.
+
+5. Upload HTTP:
+   - exige UPLOAD_ERR_OK;
+   - exige is_uploaded_file();
+   - não confia no MIME enviado pelo navegador;
+   - valida MIME com Fileinfo;
+   - valida cabeçalho %PDF-;
+   - valida presença de %%EOF;
+   - limite de 15 MB;
+   - calcula SHA-256 no backend.
+
+6. PDF gerado internamente:
+   - também passa pelas mesmas validações;
+   - não pode vir de dentro de public/.
+
+7. Download futuro:
+   - resolve storage_key somente dentro de storage/contracts;
+   - pode conferir SHA-256 esperado;
+   - não cria URL pública.
+
+8. Rollback:
+   - removeUncommitted() existe somente para apagar arquivo salvo
+     quando uma operação falhar antes de persistir o registro no banco.
+
+9. Arquivos já persistidos/assinados não devem ser apagados por esse
+   método.
+
+10. .htaccess existe apenas como defesa em profundidade. O principal
+    isolamento continua sendo manter storage/ fora de public/.
+
+TESTE
+
+No PowerShell:
+
+cd C:\xampp\htdocs\init-platform
+
+php -l app\Services\ContratoStorageService.php
+php -l bin\verificar-storage-contratos.php
+
+php bin\verificar-storage-contratos.php
+
+Saída esperada:
+
+{"ok":true,"contracts_directory_exists":true,"contracts_directory_writable":true,"outside_public":true,"fileinfo_available":true,"max_upload_mb":15}
+
+NESTA ETAPA AINDA NÃO EXISTE
+
+- Controller de upload;
+- rota de upload;
+- formulário HTML;
+- download HTTP;
+- geração automática do Termo;
+- integração API Autentique;
+- ligação do storage com DocumentoContratualService.
+
+Esses pontos só entram depois que esta camada for validada localmente.

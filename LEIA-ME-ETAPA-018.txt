@@ -1,0 +1,32 @@
+INIT SAAS PLATFORM
+ETAPA 018 - CORREÇÃO DO MENU ASSINATURAS
+
+CAUSA
+
+Na Etapa 016 o layout main.php usado como base era uma versão anterior
+em que Assinaturas ainda estava desabilitada no menu.
+
+A funcionalidade de Assinaturas não foi removida do sistema.
+Foi somente uma regressão visual no layout.
+
+CORREÇÃO
+
+Assinaturas volta a ser um link ativo:
+
+/assinaturas
+
+e usa:
+
+$navClass('assinaturas')
+
+para receber o estado visual ativo quando o usuário estiver no módulo.
+
+ARQUIVO ALTERADO
+
+views/layouts/main.php
+
+NÃO HÁ MIGRATION.
+
+VALIDAÇÃO
+
+php -l views\layouts\main.php

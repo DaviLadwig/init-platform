@@ -11,8 +11,12 @@ use App\Core\Session;
 use App\Repositories\AssinaturaRepository;
 use App\Repositories\AssinaturaPagamentoRepository;
 use App\Repositories\AuditLogRepository;
+use App\Repositories\AssinaturaDocumentoRepository;
+use App\Repositories\DocumentoContratualRepository;
 use App\Repositories\SystemAuditLogRepository;
 use App\Services\AssinaturaService;
+use App\Services\ContratoStorageService;
+use App\Services\DocumentoContratualService;
 use RuntimeException;
 
 final class AssinaturaController
@@ -36,6 +40,8 @@ final class AssinaturaController
 
     private AssinaturaService $service;
 
+    private DocumentoContratualService $documentoService;
+
     public function __construct()
     {
         $this->service = new AssinaturaService(
@@ -44,6 +50,15 @@ final class AssinaturaController
             new AuditLogRepository(),
             new SystemAuditLogRepository()
         );
+
+        $this->documentoService =
+            new DocumentoContratualService(
+                new DocumentoContratualRepository(),
+                new AssinaturaDocumentoRepository(),
+                new AssinaturaRepository(),
+                new AuditLogRepository(),
+                new ContratoStorageService()
+            );
     }
 
     /**
@@ -233,6 +248,19 @@ final class AssinaturaController
             );
         }
 
+        $documentos =
+            $this->documentoService
+                ->prepararPainelDaAssinatura(
+                    $assinaturaId
+                );
+
+        if ($documentos === null) {
+            throw new HttpException(
+                404,
+                'Assinatura não encontrada.'
+            );
+        }
+
         $this->render(
             'assinaturas/show.php',
             'Detalhes da assinatura',
@@ -243,6 +271,9 @@ final class AssinaturaController
 
                 'pagamentos' =>
                     $result['pagamentos'],
+
+                'documentosContratuais' =>
+                    $documentos,
 
                 'success' =>
                     $this->consumeFlash(
@@ -908,6 +939,10 @@ final class AssinaturaController
 
                 'pageStyles' =>
                     self::PAGE_STYLES,
+
+                'pageScripts' => [
+                    'assinaturas.js',
+                ],
             ]
         );
     }

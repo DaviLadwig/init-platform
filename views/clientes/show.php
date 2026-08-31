@@ -4,26 +4,23 @@ declare(strict_types=1);
 
 $viewCliente = isset($cliente)
     && is_array($cliente)
-    ? $cliente
-    : [];
+        ? $cliente
+        : [];
+
+$viewResumo = isset($resumoComercial)
+    && is_array($resumoComercial)
+        ? $resumoComercial
+        : [];
 
 $viewAppUrl = isset($appUrl)
     && is_string($appUrl)
-    ? rtrim($appUrl, '/')
-    : '';
+        ? rtrim($appUrl, '/')
+        : '';
 
-/**
- * Escape centralizado para saída HTML.
- */
-$e = static fn(string $value): string => htmlspecialchars(
-    $value,
-    ENT_QUOTES,
-    'UTF-8'
-);
+$clienteId = isset($viewCliente['id'])
+    ? (int) $viewCliente['id']
+    : 0;
 
-/**
- * Recupera valores textuais com segurança.
- */
 $stringValue = static function (
     array $source,
     string $key
@@ -31,13 +28,16 @@ $stringValue = static function (
     $value = $source[$key] ?? null;
 
     return is_string($value)
-        ? $value
+        ? trim($value)
         : '';
 };
 
-/**
- * Formata o CNPJ somente para apresentação.
- */
+$e = static fn (string $value): string => htmlspecialchars(
+    $value,
+    ENT_QUOTES,
+    'UTF-8'
+);
+
 $formatCnpj = static function (
     string $cnpj
 ): string {
@@ -65,9 +65,6 @@ $formatCnpj = static function (
         . substr($digits, 12, 2);
 };
 
-/**
- * Formata telefone somente para apresentação.
- */
 $formatTelefone = static function (
     string $telefone
 ): string {
@@ -102,40 +99,6 @@ $formatTelefone = static function (
     return $telefone;
 };
 
-/**
- * Formata timestamps vindos do PostgreSQL.
- */
-$formatDateTime = static function (
-    string $value
-): string {
-    if ($value === '') {
-        return '—';
-    }
-
-    try {
-        $date = new DateTimeImmutable(
-            $value
-        );
-
-        return $date->format(
-            'd/m/Y H:i'
-        );
-    } catch (Throwable) {
-        return '—';
-    }
-};
-
-
-/*
-|--------------------------------------------------------------------------
-| Dados do cliente
-|--------------------------------------------------------------------------
-*/
-
-$clienteId = isset($viewCliente['id'])
-    ? (int) $viewCliente['id']
-    : 0;
-
 $razaoSocial = $stringValue(
     $viewCliente,
     'razao_social'
@@ -146,9 +109,11 @@ $nomeFantasia = $stringValue(
     'nome_fantasia'
 );
 
-$cnpj = $stringValue(
-    $viewCliente,
-    'cnpj'
+$cnpj = $formatCnpj(
+    $stringValue(
+        $viewCliente,
+        'cnpj'
+    )
 );
 
 $email = $stringValue(
@@ -156,14 +121,11 @@ $email = $stringValue(
     'email'
 );
 
-$telefone = $stringValue(
-    $viewCliente,
-    'telefone'
-);
-
-$slug = $stringValue(
-    $viewCliente,
-    'slug'
+$telefone = $formatTelefone(
+    $stringValue(
+        $viewCliente,
+        'telefone'
+    )
 );
 
 $status = $stringValue(
@@ -171,23 +133,25 @@ $status = $stringValue(
     'status'
 );
 
-$criadoEm = $stringValue(
-    $viewCliente,
-    'criado_em'
+$produtos = $stringValue(
+    $viewResumo,
+    'produtos'
 );
 
-$atualizadoEm = $stringValue(
-    $viewCliente,
-    'atualizado_em'
+$totalProdutos = (int) (
+    $viewResumo['total_produtos']
+    ?? 0
 );
 
-$nomePrincipal =
-    $nomeFantasia !== ''
-    ? $nomeFantasia
-    : $razaoSocial;
+$totalAssinaturas = (int) (
+    $viewResumo['total_assinaturas']
+    ?? 0
+);
 
-$statusAtivo =
-    $status === 'ATIVA';
+$situacaoComercial = $stringValue(
+    $viewResumo,
+    'situacao_comercial'
+);
 
 ?>
 
@@ -200,48 +164,42 @@ $statusAtivo =
         </span>
 
         <h1>
-            <?= $e($nomePrincipal) ?>
+            <?= $e(
+                $nomeFantasia !== ''
+                    ? $nomeFantasia
+                    : $razaoSocial
+            ) ?>
         </h1>
 
         <p>
-            Informações cadastrais e administrativas da empresa cliente.
+            Ficha cadastral e visão comercial do cliente.
         </p>
 
     </div>
 
-
-    <div class="page-heading-actions">
-
-        <a
-            href="<?= $e(
-                        $viewAppUrl
-                            . '/clientes'
-                    ) ?>"
-            class="button-secondary">
-            Voltar
-        </a>
-
+    <div class="client-show-actions">
 
         <a
             href="<?= $e(
-                        $viewAppUrl
-                            . '/clientes/'
-                            . $clienteId
-                            . '/responsaveis'
-                    ) ?>"
-            class="button-secondary">
+                $viewAppUrl
+                    . '/clientes/'
+                    . $clienteId
+                    . '/responsaveis'
+            ) ?>"
+            class="button-secondary"
+        >
             Responsáveis
         </a>
 
-
         <a
             href="<?= $e(
-                        $viewAppUrl
-                            . '/clientes/'
-                            . $clienteId
-                            . '/editar'
-                    ) ?>"
-            class="button-primary">
+                $viewAppUrl
+                    . '/clientes/'
+                    . $clienteId
+                    . '/editar'
+            ) ?>"
+            class="button-primary"
+        >
             Editar cliente
         </a>
 
@@ -250,321 +208,161 @@ $statusAtivo =
 </section>
 
 
-<section class="client-profile-header">
+<section class="data-panel">
 
-    <div class="client-profile-identity">
+    <header class="data-panel-header">
 
-        <span class="client-profile-label">
-            Empresa
-        </span>
-
-        <h2>
-            <?= $e($razaoSocial) ?>
-        </h2>
-
-        <?php if (
-            $nomeFantasia !== ''
-            && $nomeFantasia !== $razaoSocial
-        ): ?>
-
-            <p>
-                <?= $e($nomeFantasia) ?>
-            </p>
-
-        <?php endif; ?>
-
-    </div>
-
-
-    <div class="client-profile-status">
-
-        <span>
-            Status cadastral
-        </span>
-
-        <strong
-            class="client-state <?= $statusAtivo
-                                    ? 'client-state-ok'
-                                    : 'client-state-danger' ?>">
-            <?= $statusAtivo
-                ? 'Ativa'
-                : 'Inativa' ?>
-        </strong>
-
-    </div>
-
-</section>
-
-
-<section class="client-detail-grid">
-
-    <!-- =====================================================
-         DADOS DA EMPRESA
-    ====================================================== -->
-
-    <article class="client-detail-panel">
-
-        <header>
-
-            <span>
-                Cadastro
-            </span>
+        <div>
 
             <h2>
                 Dados da empresa
             </h2>
 
-        </header>
+            <p>
+                Informações cadastrais registradas na plataforma.
+            </p>
 
+        </div>
 
-        <dl class="client-detail-list">
+        <?php if ($status !== ''): ?>
 
-            <div>
-
-                <dt>
-                    Razão social
-                </dt>
-
-                <dd>
-                    <?= $razaoSocial !== ''
-                        ? $e($razaoSocial)
-                        : '—' ?>
-                </dd>
-
-            </div>
-
-
-            <div>
-
-                <dt>
-                    Nome fantasia
-                </dt>
-
-                <dd>
-                    <?= $nomeFantasia !== ''
-                        ? $e($nomeFantasia)
-                        : '—' ?>
-                </dd>
-
-            </div>
-
-
-            <div>
-
-                <dt>
-                    CNPJ
-                </dt>
-
-                <dd>
-                    <?= $cnpj !== ''
-                        ? $e(
-                            $formatCnpj(
-                                $cnpj
-                            )
-                        )
-                        : '—' ?>
-                </dd>
-
-            </div>
-
-        </dl>
-
-    </article>
-
-
-    <!-- =====================================================
-         CONTATO
-    ====================================================== -->
-
-    <article class="client-detail-panel">
-
-        <header>
-
-            <span>
-                Contato
+            <span class="status-badge">
+                <?= $e($status) ?>
             </span>
 
-            <h2>
-                Informações de contato
-            </h2>
-
-        </header>
-
-
-        <dl class="client-detail-list">
-
-            <div>
-
-                <dt>
-                    E-mail
-                </dt>
-
-                <dd>
-                    <?= $email !== ''
-                        ? $e($email)
-                        : '—' ?>
-                </dd>
-
-            </div>
-
-
-            <div>
-
-                <dt>
-                    Telefone
-                </dt>
-
-                <dd>
-                    <?= $telefone !== ''
-                        ? $e(
-                            $formatTelefone(
-                                $telefone
-                            )
-                        )
-                        : '—' ?>
-                </dd>
-
-            </div>
-
-        </dl>
-
-    </article>
-
-
-    <!-- =====================================================
-         IDENTIFICAÇÃO NA PLATAFORMA
-    ====================================================== -->
-
-    <article class="client-detail-panel">
-
-        <header>
-
-            <span>
-                Plataforma
-            </span>
-
-            <h2>
-                Identificação
-            </h2>
-
-        </header>
-
-
-        <dl class="client-detail-list">
-
-            <div>
-
-                <dt>
-                    ID interno
-                </dt>
-
-                <dd>
-                    #<?= $clienteId ?>
-                </dd>
-
-            </div>
-
-
-            <div>
-
-                <dt>
-                    Slug
-                </dt>
-
-                <dd>
-
-                    <?php if ($slug !== ''): ?>
-
-                        <code class="client-slug">
-                            <?= $e($slug) ?>
-                        </code>
-
-                    <?php else: ?>
-
-                        —
-
-                    <?php endif; ?>
-
-                </dd>
-
-            </div>
-
-
-            <div>
-
-                <dt>
-                    Status
-                </dt>
-
-                <dd>
-                    <?= $status !== ''
-                        ? $e($status)
-                        : '—' ?>
-                </dd>
-
-            </div>
-
-        </dl>
-
-    </article>
-
-
-    <!-- =====================================================
-         HISTÓRICO
-    ====================================================== -->
-
-    <article class="client-detail-panel">
-
-        <header>
-
-            <span>
-                Histórico
-            </span>
-
-            <h2>
-                Registro
-            </h2>
-
-        </header>
-
-
-        <dl class="client-detail-list">
-
-            <div>
-
-                <dt>
-                    Cadastrado em
-                </dt>
-
-                <dd>
-                    <?= $e(
-                        $formatDateTime(
-                            $criadoEm
-                        )
-                    ) ?>
-                </dd>
-
-            </div>
-
-
-            <div>
-
-                <dt>
-                    Última atualização
-                </dt>
-
-                <dd>
-                    <?= $e(
-                        $formatDateTime(
-                            $atualizadoEm
-                        )
-                    ) ?>
-                </dd>
-
-            </div>
-
-        </dl>
-
-    </article>
+        <?php endif; ?>
+
+    </header>
+
+
+    <div class="client-show-grid">
+
+        <div class="client-show-item">
+            <span>Razão social</span>
+            <strong>
+                <?= $e(
+                    $razaoSocial !== ''
+                        ? $razaoSocial
+                        : '—'
+                ) ?>
+            </strong>
+        </div>
+
+        <div class="client-show-item">
+            <span>Nome fantasia</span>
+            <strong>
+                <?= $e(
+                    $nomeFantasia !== ''
+                        ? $nomeFantasia
+                        : '—'
+                ) ?>
+            </strong>
+        </div>
+
+        <div class="client-show-item">
+            <span>CNPJ</span>
+            <strong>
+                <?= $e(
+                    $cnpj !== ''
+                        ? $cnpj
+                        : '—'
+                ) ?>
+            </strong>
+        </div>
+
+        <div class="client-show-item">
+            <span>E-mail</span>
+            <strong>
+                <?= $e(
+                    $email !== ''
+                        ? $email
+                        : '—'
+                ) ?>
+            </strong>
+        </div>
+
+        <div class="client-show-item">
+            <span>Telefone</span>
+            <strong>
+                <?= $e(
+                    $telefone !== ''
+                        ? $telefone
+                        : '—'
+                ) ?>
+            </strong>
+        </div>
+
+    </div>
 
 </section>
+
+
+<section class="data-panel">
+
+    <header class="data-panel-header">
+
+        <div>
+
+            <h2>
+                Situação comercial
+            </h2>
+
+            <p>
+                Resumo das contratações vinculadas ao cliente.
+            </p>
+
+        </div>
+
+    </header>
+
+
+    <div class="client-show-grid">
+
+        <div class="client-show-item">
+            <span>Situação</span>
+            <strong>
+                <?= $e(
+                    $situacaoComercial !== ''
+                        ? $situacaoComercial
+                        : 'Sem assinatura'
+                ) ?>
+            </strong>
+        </div>
+
+        <div class="client-show-item">
+            <span>Produtos contratados</span>
+            <strong>
+                <?= $totalProdutos ?>
+            </strong>
+
+            <?php if ($produtos !== ''): ?>
+
+                <small>
+                    <?= $e($produtos) ?>
+                </small>
+
+            <?php endif; ?>
+        </div>
+
+        <div class="client-show-item">
+            <span>Assinaturas</span>
+            <strong>
+                <?= $totalAssinaturas ?>
+            </strong>
+        </div>
+
+    </div>
+
+</section>
+
+
+<div class="form-actions">
+
+    <a
+        href="<?= $e($viewAppUrl . '/clientes') ?>"
+        class="button-secondary"
+    >
+        Voltar aos clientes
+    </a>
+
+</div>

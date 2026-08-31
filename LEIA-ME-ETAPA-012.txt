@@ -1,0 +1,113 @@
+INIT SAAS PLATFORM
+ETAPA 012 - PRIMEIRO TERMO + INTERFACE DOCUMENTAL
+
+OBJETIVO
+
+Tornar o fluxo documental manual utilizável dentro de:
+
+Assinaturas -> Ver
+
+SEM integrar ainda a API do Autentique e SEM bloquear ainda
+AssinaturaService::ativar().
+
+MIGRATION
+
+database/migrations/008_seed_termo_contratacao_saas_v1.sql
+
+Ela cria, se ainda não existir outro global ativo do mesmo tipo:
+
+- tipo: TERMO_CONTRATACAO_SAAS
+- título: Termo de Contratação SaaS
+- versão: 1.0
+- escopo: GLOBAL
+- obrigatório para ativação: TRUE
+
+A migration NÃO contém texto jurídico nem PDF.
+
+O conteúdo real do termo deverá ser revisado e convertido em PDF antes
+de ser usado em produção.
+
+TELA "VER ASSINATURA"
+
+A nova seção "Documentos contratuais" mostra:
+
+- versão aplicável;
+- obrigatório ou não;
+- situação documental;
+- responsável;
+- provedor;
+- datas;
+- tentativa cancelada;
+- download original;
+- download assinado.
+
+FLUXO MANUAL
+
+1. Escolher responsável.
+2. Selecionar PDF original.
+3. Registrar termo.
+4. Baixar original.
+5. Enviar manualmente no Autentique.
+6. Clicar "Marcar envio ao Autentique".
+7. Aguardar assinatura.
+8. Baixar PDF final do Autentique.
+9. Anexar PDF assinado.
+10. Informar data/hora da assinatura.
+11. Registrar documento assinado.
+12. Sistema passa o documento para ASSINADO.
+
+SEGURANÇA
+
+- responsável é obrigatório no fluxo inicial;
+- o backend valida que ele pertence à empresa e está ativo;
+- original/assinado ficam fora de public/;
+- SHA-256 calculado pelo backend;
+- documento de outra assinatura retorna como não encontrado;
+- documento ASSINADO continua imutável por trigger;
+- download revalida o hash;
+- upload máximo de 15 MB;
+- provider AUTENTIQUE é definido pelo backend.
+
+IMPORTANTE
+
+A documentação já mostra "completa" ou "pendente", mas nesta etapa
+ainda NÃO bloqueamos o botão de ativação no backend.
+
+Esse bloqueio será ligado somente depois de testar este fluxo ponta
+a ponta com um PDF de teste.
+
+INSTALAÇÃO
+
+1. Execute:
+   database/migrations/008_seed_termo_contratacao_saas_v1.sql
+
+2. Substitua/adicione os arquivos do pacote.
+
+3. Valide:
+
+php -l app\Controllers\AssinaturaController.php
+php -l app\Controllers\DocumentoContratualController.php
+php -l app\Repositories\AssinaturaDocumentoRepository.php
+php -l app\Repositories\DocumentoContratualRepository.php
+php -l app\Services\DocumentoContratualService.php
+php -l app\Services\ContratoStorageService.php
+php -l routes\web.php
+php -l views\assinaturas\show.php
+
+php bin\verificar-storage-contratos.php
+
+TESTE FUNCIONAL
+
+Use primeiro um PDF SEM validade contratual apenas para teste técnico.
+
+Não use ainda um termo jurídico definitivo.
+
+Depois de validar:
+- GERADO
+- AGUARDANDO_ASSINATURA
+- ASSINADO
+- downloads
+- tentativa cancelada
+
+a próxima etapa será conectar o requisito documental ao backend de
+ativação da assinatura.

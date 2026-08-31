@@ -22,53 +22,22 @@ $viewCsrfToken = isset($csrfToken)
         ? $csrfToken
         : '';
 
-$razaoSocial =
-    is_string(
-        $viewFormData['razao_social']
-        ?? null
-    )
-        ? $viewFormData['razao_social']
-        : '';
+$e = static fn (string $value): string => htmlspecialchars(
+    $value,
+    ENT_QUOTES,
+    'UTF-8'
+);
 
-$nomeFantasia =
-    is_string(
-        $viewFormData['nome_fantasia']
-        ?? null
-    )
-        ? $viewFormData['nome_fantasia']
-        : '';
+$value = static function (
+    array $source,
+    string $key
+): string {
+    $fieldValue = $source[$key] ?? null;
 
-$cnpj =
-    is_string(
-        $viewFormData['cnpj']
-        ?? null
-    )
-        ? $viewFormData['cnpj']
+    return is_string($fieldValue)
+        ? $fieldValue
         : '';
-
-$email =
-    is_string(
-        $viewFormData['email']
-        ?? null
-    )
-        ? $viewFormData['email']
-        : '';
-
-$telefone =
-    is_string(
-        $viewFormData['telefone']
-        ?? null
-    )
-        ? $viewFormData['telefone']
-        : '';
-
-$slug =
-    is_string(
-        $viewFormData['slug']
-        ?? null
-    )
-        ? $viewFormData['slug']
-        : '';
+};
 
 ?>
 
@@ -114,39 +83,25 @@ $slug =
 
     <form
         method="POST"
-        action="<?= htmlspecialchars(
-            $viewAppUrl . '/clientes',
-            ENT_QUOTES,
-            'UTF-8'
-        ) ?>"
-        class="form-content"
-        novalidate
+        action="<?= $e($viewAppUrl . '/clientes') ?>"
+        class="entity-form"
+        data-client-form
     >
 
         <input
             type="hidden"
             name="_token"
-            value="<?= htmlspecialchars(
-                $viewCsrfToken,
-                ENT_QUOTES,
-                'UTF-8'
-            ) ?>"
+            value="<?= $e($viewCsrfToken) ?>"
         >
 
 
-        <?php if (
-            isset($viewErrors['general'])
-        ): ?>
+        <?php if ($viewErrors !== []): ?>
 
             <div
-                class="form-alert form-alert-error"
+                class="form-alert form-alert-error form-grid-full"
                 role="alert"
             >
-                <?= htmlspecialchars(
-                    (string) $viewErrors['general'],
-                    ENT_QUOTES,
-                    'UTF-8'
-                ) ?>
+                Revise os campos indicados antes de continuar.
             </div>
 
         <?php endif; ?>
@@ -161,34 +116,27 @@ $slug =
                 </label>
 
                 <input
-                    type="text"
                     id="razao_social"
+                    type="text"
                     name="razao_social"
-                    maxlength="200"
-                    value="<?= htmlspecialchars(
-                        $razaoSocial,
-                        ENT_QUOTES,
-                        'UTF-8'
+                    value="<?= $e(
+                        $value(
+                            $viewFormData,
+                            'razao_social'
+                        )
                     ) ?>"
+                    maxlength="200"
+                    autocomplete="organization"
                     required
                 >
 
                 <?php if (
-                    isset(
-                        $viewErrors[
-                            'razao_social'
-                        ]
-                    )
+                    isset($viewErrors['razao_social'])
+                    && is_string($viewErrors['razao_social'])
                 ): ?>
 
                     <span class="field-error">
-                        <?= htmlspecialchars(
-                            (string) $viewErrors[
-                                'razao_social'
-                            ],
-                            ENT_QUOTES,
-                            'UTF-8'
-                        ) ?>
+                        <?= $e($viewErrors['razao_social']) ?>
                     </span>
 
                 <?php endif; ?>
@@ -203,15 +151,17 @@ $slug =
                 </label>
 
                 <input
-                    type="text"
                     id="nome_fantasia"
+                    type="text"
                     name="nome_fantasia"
-                    maxlength="200"
-                    value="<?= htmlspecialchars(
-                        $nomeFantasia,
-                        ENT_QUOTES,
-                        'UTF-8'
+                    value="<?= $e(
+                        $value(
+                            $viewFormData,
+                            'nome_fantasia'
+                        )
                     ) ?>"
+                    maxlength="200"
+                    autocomplete="organization"
                 >
 
                 <span class="field-hint">
@@ -219,21 +169,12 @@ $slug =
                 </span>
 
                 <?php if (
-                    isset(
-                        $viewErrors[
-                            'nome_fantasia'
-                        ]
-                    )
+                    isset($viewErrors['nome_fantasia'])
+                    && is_string($viewErrors['nome_fantasia'])
                 ): ?>
 
                     <span class="field-error">
-                        <?= htmlspecialchars(
-                            (string) $viewErrors[
-                                'nome_fantasia'
-                            ],
-                            ENT_QUOTES,
-                            'UTF-8'
-                        ) ?>
+                        <?= $e($viewErrors['nome_fantasia']) ?>
                     </span>
 
                 <?php endif; ?>
@@ -248,30 +189,38 @@ $slug =
                 </label>
 
                 <input
-                    type="text"
                     id="cnpj"
+                    type="text"
                     name="cnpj"
+                    value="<?= $e(
+                        $value(
+                            $viewFormData,
+                            'cnpj'
+                        )
+                    ) ?>"
                     inputmode="numeric"
                     maxlength="18"
-                    value="<?= htmlspecialchars(
-                        $cnpj,
-                        ENT_QUOTES,
-                        'UTF-8'
-                    ) ?>"
-                    placeholder="00.000.000/0000-00"
+                    autocomplete="off"
+                    spellcheck="false"
+                    data-mask="cnpj"
+                    aria-describedby="cnpj-hint"
                     required
                 >
 
+                <span
+                    id="cnpj-hint"
+                    class="field-hint"
+                >
+                    A formatação é aplicada automaticamente.
+                </span>
+
                 <?php if (
                     isset($viewErrors['cnpj'])
+                    && is_string($viewErrors['cnpj'])
                 ): ?>
 
                     <span class="field-error">
-                        <?= htmlspecialchars(
-                            (string) $viewErrors['cnpj'],
-                            ENT_QUOTES,
-                            'UTF-8'
-                        ) ?>
+                        <?= $e($viewErrors['cnpj']) ?>
                     </span>
 
                 <?php endif; ?>
@@ -286,15 +235,17 @@ $slug =
                 </label>
 
                 <input
-                    type="email"
                     id="email"
+                    type="email"
                     name="email"
-                    maxlength="255"
-                    value="<?= htmlspecialchars(
-                        $email,
-                        ENT_QUOTES,
-                        'UTF-8'
+                    value="<?= $e(
+                        $value(
+                            $viewFormData,
+                            'email'
+                        )
                     ) ?>"
+                    maxlength="255"
+                    autocomplete="email"
                 >
 
                 <span class="field-hint">
@@ -303,14 +254,11 @@ $slug =
 
                 <?php if (
                     isset($viewErrors['email'])
+                    && is_string($viewErrors['email'])
                 ): ?>
 
                     <span class="field-error">
-                        <?= htmlspecialchars(
-                            (string) $viewErrors['email'],
-                            ENT_QUOTES,
-                            'UTF-8'
-                        ) ?>
+                        <?= $e($viewErrors['email']) ?>
                     </span>
 
                 <?php endif; ?>
@@ -325,17 +273,17 @@ $slug =
                 </label>
 
                 <input
-                    type="text"
                     id="telefone"
+                    type="tel"
                     name="telefone"
-                    inputmode="tel"
-                    maxlength="20"
-                    value="<?= htmlspecialchars(
-                        $telefone,
-                        ENT_QUOTES,
-                        'UTF-8'
+                    value="<?= $e(
+                        $value(
+                            $viewFormData,
+                            'telefone'
+                        )
                     ) ?>"
-                    placeholder="(98) 99999-9999"
+                    maxlength="20"
+                    autocomplete="tel"
                 >
 
                 <span class="field-hint">
@@ -344,57 +292,11 @@ $slug =
 
                 <?php if (
                     isset($viewErrors['telefone'])
+                    && is_string($viewErrors['telefone'])
                 ): ?>
 
                     <span class="field-error">
-                        <?= htmlspecialchars(
-                            (string) $viewErrors[
-                                'telefone'
-                            ],
-                            ENT_QUOTES,
-                            'UTF-8'
-                        ) ?>
-                    </span>
-
-                <?php endif; ?>
-
-            </div>
-
-
-            <div class="field-group">
-
-                <label for="slug">
-                    Slug
-                </label>
-
-                <input
-                    type="text"
-                    id="slug"
-                    name="slug"
-                    maxlength="150"
-                    value="<?= htmlspecialchars(
-                        $slug,
-                        ENT_QUOTES,
-                        'UTF-8'
-                    ) ?>"
-                    placeholder="prefeitura-vitoria-do-mearim"
-                    required
-                >
-
-                <span class="field-hint">
-                    Identificador público da empresa na plataforma.
-                </span>
-
-                <?php if (
-                    isset($viewErrors['slug'])
-                ): ?>
-
-                    <span class="field-error">
-                        <?= htmlspecialchars(
-                            (string) $viewErrors['slug'],
-                            ENT_QUOTES,
-                            'UTF-8'
-                        ) ?>
+                        <?= $e($viewErrors['telefone']) ?>
                     </span>
 
                 <?php endif; ?>
@@ -404,14 +306,10 @@ $slug =
         </div>
 
 
-        <footer class="form-actions">
+        <div class="form-actions">
 
             <a
-                href="<?= htmlspecialchars(
-                    $viewAppUrl . '/clientes',
-                    ENT_QUOTES,
-                    'UTF-8'
-                ) ?>"
+                href="<?= $e($viewAppUrl . '/clientes') ?>"
                 class="button-secondary"
             >
                 Cancelar
@@ -424,7 +322,7 @@ $slug =
                 Cadastrar cliente
             </button>
 
-        </footer>
+        </div>
 
     </form>
 

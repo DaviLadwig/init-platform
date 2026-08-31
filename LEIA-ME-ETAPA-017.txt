@@ -1,0 +1,21 @@
+INIT SAAS PLATFORM
+ETAPA 017 - CORREÇÃO DA AÇÃO VER EM CLIENTES
+
+CAUSA:
+A rota GET /clientes/{id} aponta para ClienteController::show,
+mas o método show() não existia no controller atual.
+
+Isso causa erro 500 ao clicar em Ver.
+
+ARQUIVOS:
+app/Controllers/ClienteController.php
+views/clientes/show.php
+public/css/clientes-show.css
+
+NÃO HÁ MIGRATION.
+
+VALIDAÇÃO:
+php -l app\Controllers\ClienteController.php
+php -l views\clientes\show.php
+
+Depois acesse Clientes > Ver novamente.
