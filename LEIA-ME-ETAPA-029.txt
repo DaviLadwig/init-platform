@@ -1,0 +1,246 @@
+INIT SAAS PLATFORM
+ETAPA 029 - WEBHOOK ASAAS + FILA IDEMPOTENTE
+
+OBJETIVO
+
+Chegar ao fluxo:
+
+Cliente paga
+    ↓
+Asaas envia evento
+    ↓
+Init valida autenticação
+    ↓
+Init persiste o evento
+    ↓
+HTTP 200 rápido
+    ↓
+processador em segundo plano
+    ↓
+assinatura_pagamentos
+    ↓
+próxima cobrança
+    ↓
+assinatura ATIVA
+    ↓
+Financeiro atualizado
+
+DECISÃO IMPORTANTE
+
+O endpoint NÃO executa toda a regra financeira durante a
+requisição do Asaas.
+
+Ele:
+1. autentica;
+2. valida;
+3. persiste o evento de forma idempotente;
+4. responde HTTP 200.
+
+Depois um job processa a fila.
+
+Isso segue a recomendação atual do Asaas de persistir primeiro
+e responder 2xx rapidamente.
+
+EVENTOS UTILIZADOS
+
+PAYMENT_CONFIRMED
+PAYMENT_RECEIVED
+
+Os dois podem representar uma etapa válida de pagamento.
+
+O mesmo payment_id jamais avança a assinatura duas vezes:
+assinatura_pagamentos já possui unicidade por
+gateway + gateway_payment_id e o serviço também verifica antes.
+
+EVENT ID
+
+O Asaas usa entrega "at least once".
+
+Por isso:
+gateway + ambiente + event_id
+é UNIQUE no PostgreSQL.
+
+TOKEN DO WEBHOOK
+
+Gere:
+
+php bin\gerar-token-webhook-asaas.php
+
+Depois coloque no .env:
+
+ASAAS_WEBHOOK_TOKEN=<token>
+
+E use o MESMO token no campo authToken do webhook no Asaas.
+
+NÃO USE:
+ASAAS_API_KEY
+
+O Asaas envia o authToken no header:
+
+asaas-access-token
+
+Nosso endpoint valida com hash_equals().
+
+ENDPOINT
+
+/public/webhooks/asaas.php
+
+No ambiente local ele ficará aproximadamente:
+
+http://localhost/init-platform/public/webhooks/asaas.php
+
+MAS:
+localhost NÃO pode ser chamado pelos servidores do Asaas.
+
+Na próxima etapa vamos expor temporariamente esse endpoint de
+Sandbox com uma URL HTTPS pública/túnel seguro para homologação.
+
+MIGRATION
+
+database/migrations/014_gateway_webhook_eventos.sql
+
+O payload completo NÃO é armazenado.
+
+Persistimos somente:
+- event_id;
+- event_type;
+- payment_id;
+- subscription_id;
+- vencimento;
+- valor;
+- billing type;
+- status do pagamento;
+- data do pagamento;
+- status interno de processamento.
+
+Não armazenamos:
+- cartão;
+- token de cartão;
+- CNPJ;
+- e-mail;
+- telefone;
+- invoiceUrl;
+- comprovante;
+- payload integral.
+
+PROCESSAMENTO FINANCEIRO
+
+Quando um pagamento válido é processado:
+
+1. localiza assinatura pelo sub_ do Asaas;
+2. bloqueia a assinatura FOR UPDATE;
+3. valida status;
+4. valida BRL;
+5. valida valor;
+6. verifica payment_id duplicado;
+7. insere assinatura_pagamentos:
+   status CONFIRMADO
+   origem GATEWAY
+   gateway ASAAS
+8. calcula próxima cobrança pelo vencimento pago;
+9. status volta/permanece ATIVA;
+10. suspenso_em = NULL;
+11. cria auditoria de sistema;
+12. marca o evento PROCESSADO.
+
+PERIODICIDADES
+
+MENSAL       +1 mês
+TRIMESTRAL   +3 meses
+SEMESTRAL    +6 meses
+ANUAL        +12 meses
+
+O cálculo preserva o dia quando possível e usa o último dia
+válido do mês alvo quando necessário.
+
+Exemplo:
+31/01 + 1 mês = 28/02 ou 29/02
+e não 03/03.
+
+MÉTODO DE PAGAMENTO
+
+PIX         -> PIX
+BOLETO      -> BOLETO
+CREDIT_CARD -> CARTAO
+outros      -> OUTRO
+
+ARQUIVOS
+
+app/Repositories/
+├── AsaasWebhookRepository.php
+└── IntegrationAuditLogRepository.php
+
+app/Services/
+└── AsaasWebhookService.php
+
+public/webhooks/
+└── asaas.php
+
+database/migrations/
+└── 014_gateway_webhook_eventos.sql
+
+bin/
+├── processar-webhooks-asaas.php
+└── gerar-token-webhook-asaas.php
+
+scripts/windows/
+├── processar-webhooks-asaas.cmd
+└── instalar-tarefa-webhooks-asaas.ps1
+
+deploy/cron/
+└── init-platform-webhooks-asaas
+
+PASSO 1
+
+Execute migration 014.
+
+PASSO 2
+
+Valide:
+
+php -l app\Repositories\AsaasWebhookRepository.php
+php -l app\Repositories\IntegrationAuditLogRepository.php
+php -l app\Services\AsaasWebhookService.php
+php -l public\webhooks\asaas.php
+php -l bin\processar-webhooks-asaas.php
+php -l bin\gerar-token-webhook-asaas.php
+
+PASSO 3
+
+Gere o token:
+
+php bin\gerar-token-webhook-asaas.php
+
+NÃO ENVIE O TOKEN NO CHAT.
+
+Adicione no seu .env:
+
+ASAAS_WEBHOOK_TOKEN=...
+
+PASSO 4
+
+Ainda NÃO instale a tarefa do Windows.
+
+Primeiro vamos:
+- validar migration;
+- validar sintaxe;
+- configurar URL pública de homologação;
+- cadastrar webhook no Asaas;
+- provocar pagamento Sandbox;
+- conferir fila;
+- rodar processador manualmente.
+
+Somente depois instalamos a tarefa automática.
+
+PRÓXIMA ETAPA
+
+ETAPA 030 - EXPOR O WEBHOOK PARA O SANDBOX
+
+Como o projeto está em localhost, precisamos de uma URL HTTPS
+pública temporária para o Asaas chamar.
+
+Depois:
+- configurar authToken;
+- selecionar PAYMENT_CONFIRMED e PAYMENT_RECEIVED;
+- simular pagamento no Sandbox;
+- confirmar processamento automático ponta a ponta.

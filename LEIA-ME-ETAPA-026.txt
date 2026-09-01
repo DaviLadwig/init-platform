@@ -1,0 +1,146 @@
+INIT SAAS PLATFORM
+ETAPA 026 - BASE DE INTEGRAÇÃO ASAAS
+
+OBJETIVO
+
+Criar a fronteira entre a regra de negócio da Init Platform
+e o provedor de pagamento.
+
+Nesta etapa NÃO criamos:
+- cliente no Asaas;
+- cobrança;
+- Pix;
+- boleto;
+- cartão;
+- webhook;
+- pagamento automático.
+
+Criamos somente:
+- contrato PaymentGatewayInterface;
+- implementação AsaasGateway;
+- factory segura;
+- teste de conectividade somente leitura.
+
+ARQUIVOS
+
+app/Contracts/PaymentGatewayInterface.php
+
+app/Integrations/Payments/
+├── PaymentGatewayException.php
+├── PaymentGatewayFactory.php
+└── Asaas/
+    └── AsaasGateway.php
+
+bin/testar-asaas-conexao.php
+.env.asaas.example
+
+NÃO HÁ MIGRATION.
+
+POR QUE ESSA CAMADA EXISTE
+
+A regra de negócio não deve depender diretamente do Asaas.
+
+Hoje:
+PaymentGatewayInterface
+        ↓
+AsaasGateway
+
+Futuramente poderíamos ter:
+PaymentGatewayInterface
+        ├── AsaasGateway
+        ├── StripeGateway
+        └── outro provedor
+
+Sem fazer o módulo Assinaturas depender do vocabulário interno
+de um gateway específico.
+
+CONFIGURAÇÃO
+
+Adicione ao .env local:
+
+ASAAS_ENV=sandbox
+ASAAS_API_KEY=<SUA CHAVE DE SANDBOX>
+
+ATENÇÃO AO $
+
+As chaves atuais do Asaas possuem prefixo com "$".
+
+Sandbox:
+$aact_hmlg_
+
+Produção:
+$aact_prod_
+
+O caractere "$" faz parte da chave.
+
+O vlucas/phpdotenv lerá a variável do arquivo .env.
+Não coloque a chave diretamente em string PHP.
+
+SEGURANÇA IMPLEMENTADA
+
+- API key somente em variável de ambiente;
+- nunca enviada ao navegador;
+- nunca gravada no banco;
+- nunca exibida pelo CLI;
+- nunca escrita em logs por esta camada;
+- base URL limitada aos hosts oficiais do Asaas;
+- redirects HTTP desabilitados;
+- timeout de conexão;
+- timeout total;
+- validação de prefixo sandbox/production;
+- resposta inválida é rejeitada;
+- erros do gateway não são propagados integralmente.
+
+TESTE
+
+ANTES:
+1. crie uma conta Sandbox no Asaas;
+2. gere uma API key de Sandbox;
+3. coloque a chave somente no seu .env local.
+
+NÃO envie a API key para o ChatGPT.
+
+Depois:
+
+php -l app\Contracts\PaymentGatewayInterface.php
+php -l app\Integrations\Payments\PaymentGatewayException.php
+php -l app\Integrations\Payments\PaymentGatewayFactory.php
+php -l app\Integrations\Payments\Asaas\AsaasGateway.php
+php -l bin\testar-asaas-conexao.php
+
+Em seguida:
+
+php bin\testar-asaas-conexao.php
+
+Resultado esperado:
+
+{
+    "ok": true,
+    "provider": "ASAAS",
+    "environment": "sandbox"
+}
+
+O teste executa somente uma consulta GET mínima.
+Ele não cria cliente nem cobrança.
+
+PRÓXIMA ETAPA
+
+Depois da conexão Sandbox validada:
+
+Etapa 027
+- vincular empresa Init a customer do Asaas;
+- preparar persistência do gateway_customer_id;
+- criar cliente no Sandbox;
+- idempotência;
+- nenhuma cobrança ainda.
+
+Depois:
+Etapa 028
+- criar cobrança de assinatura no Sandbox.
+
+Depois:
+Etapa 029
+- webhook autenticado;
+- PAYMENT_CONFIRMED / PAYMENT_RECEIVED;
+- registro automático em assinatura_pagamentos;
+- avanço de proxima_cobranca_em.

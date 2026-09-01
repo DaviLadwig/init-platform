@@ -1,0 +1,233 @@
+INIT SAAS PLATFORM
+ETAPA 027 - VÍNCULO EMPRESA x CUSTOMER ASAAS
+
+A conexão com o Asaas Sandbox já foi validada.
+
+OBJETIVO DESTA ETAPA
+
+Criar o vínculo correto:
+
+EMPRESA INIT
+    ↓
+CUSTOMER ASAAS
+
+Ainda NÃO criamos:
+- cobrança;
+- Pix;
+- boleto;
+- cartão;
+- subscription do Asaas;
+- webhook.
+
+POR QUE O CUSTOMER É DA EMPRESA
+
+Uma empresa pode contratar vários produtos:
+
+EMPRESA A
+├── Init RH
+└── Init Clinic
+
+Mas continua sendo a mesma pessoa jurídica pagadora.
+
+Por isso o vínculo do customer não deve ser duplicado em cada
+assinatura.
+
+A tabela assinaturas já possui campos de gateway preparados desde
+a arquitetura inicial. Eles NÃO são removidos nesta etapa.
+
+O vínculo canônico do PAGADOR passa a ser:
+
+public.empresa_gateway_clientes
+
+MIGRATION
+
+database/migrations/012_empresa_gateway_clientes.sql
+
+A migration inclui a verificação no final, conforme padrão atual.
+
+GARANTIAS DE UNICIDADE
+
+Uma empresa só pode ter um customer por:
+
+empresa + gateway + ambiente
+
+Também são únicos:
+
+gateway + ambiente + gateway_customer_id
+
+gateway + ambiente + external_reference
+
+SANDBOX E PRODUÇÃO
+
+São vínculos independentes.
+
+Exemplo:
+
+Empresa 10 + ASAAS + SANDBOX
+→ cus_xxx
+
+Empresa 10 + ASAAS + PRODUCTION
+→ cus_yyy
+
+Isso é proposital.
+
+PREVENÇÃO DE DUPLICIDADE REMOTA
+
+O Asaas permite clientes duplicados.
+
+Nosso fluxo executa:
+
+1. procura vínculo local;
+2. procura no Asaas por externalReference;
+3. procura no Asaas por CNPJ;
+4. somente se não encontrar, cria customer;
+5. persiste o ID retornado.
+
+externalReference:
+
+init_empresa_<ID>
+
+Exemplo:
+
+init_empresa_2
+
+CONCORRÊNCIA
+
+Foi adicionado advisory lock PostgreSQL por empresa.
+
+Assim duas execuções locais simultâneas não devem criar dois
+customers para a mesma empresa.
+
+CNPJ
+
+Para integrar com o Asaas, o CNPJ da empresa precisa ser
+matematicamente válido.
+
+Um CNPJ fictício reservado que o ambiente local aceite apenas
+para testes internos pode ser recusado nesta integração.
+
+Use uma empresa de teste com CNPJ válido.
+
+NOTIFICAÇÕES
+
+Por enquanto:
+
+notificationDisabled = true
+
+Ou seja:
+o cadastro do customer não deverá disparar comunicação automática
+do Asaas.
+
+Decidiremos as notificações quando criarmos o fluxo de cobrança.
+
+ARQUIVOS
+
+app/Contracts/PaymentGatewayInterface.php
+
+app/Integrations/Payments/
+├── PaymentGatewayException.php
+├── PaymentGatewayFactory.php
+└── Asaas/
+    └── AsaasGateway.php
+
+app/Repositories/
+├── EmpresaGatewayClienteRepository.php
+└── IntegrationAuditLogRepository.php
+
+app/Services/
+└── EmpresaGatewayClienteService.php
+
+database/migrations/
+└── 012_empresa_gateway_clientes.sql
+
+bin/
+└── vincular-empresa-asaas.php
+
+AUDITORIA
+
+Ao persistir um novo vínculo:
+
+EMPRESA_GATEWAY_CLIENTE_VINCULADO
+
+Não são gravados no log:
+- CNPJ;
+- e-mail;
+- telefone;
+- API key;
+- corpo da resposta do Asaas.
+
+PASSO 1
+
+Execute a migration 012 no pgAdmin.
+
+PASSO 2
+
+Valide:
+
+php -l app\Contracts\PaymentGatewayInterface.php
+php -l app\Integrations\Payments\PaymentGatewayException.php
+php -l app\Integrations\Payments\PaymentGatewayFactory.php
+php -l app\Integrations\Payments\Asaas\AsaasGateway.php
+php -l app\Repositories\EmpresaGatewayClienteRepository.php
+php -l app\Repositories\IntegrationAuditLogRepository.php
+php -l app\Services\EmpresaGatewayClienteService.php
+php -l bin\vincular-empresa-asaas.php
+
+PASSO 3
+
+Escolha o ID de UMA empresa de teste que tenha CNPJ
+matematicamente válido.
+
+Exemplo:
+
+php bin\vincular-empresa-asaas.php 2
+
+RESULTADO POSSÍVEL AO CRIAR
+
+{
+    "ok": true,
+    "empresa_id": 2,
+    "provider": "ASAAS",
+    "environment": "SANDBOX",
+    "gateway_customer_id": "cus_...",
+    "origem": "CRIADO"
+}
+
+Se executar novamente:
+
+"origem": "JA_VINCULADO"
+
+e nenhum novo customer deve ser criado no Asaas.
+
+TESTE IMPORTANTE
+
+Depois da primeira execução:
+
+1. abra Asaas Sandbox;
+2. vá em Meus Clientes;
+3. confira se existe exatamente um cadastro;
+4. execute o comando novamente;
+5. confira que continua existindo somente um.
+
+PRÓXIMA ETAPA
+
+Depois de validar o customer:
+
+ETAPA 028
+ASSINATURA
+    ↓
+COBRANÇA ASAAS SANDBOX
+
+Ainda sem webhook.
+
+Depois:
+ETAPA 029
+Webhook autenticado + idempotência
+    ↓
+pagamento confirmado
+    ↓
+assinatura_pagamentos
+    ↓
+próxima cobrança
+    ↓
+Financeiro automático

@@ -1,0 +1,232 @@
+INIT SAAS PLATFORM
+ETAPA 028 - ASSINATURA RECORRENTE ASAAS SANDBOX
+
+DECISÃO ARQUITETURAL
+
+Em vez de criar uma cobrança avulsa por ciclo, esta etapa usa o
+recurso de ASSINATURAS RECORRENTES do Asaas.
+
+Motivo:
+o próprio Asaas gera as próximas cobranças de acordo com o ciclo,
+o que combina melhor com SaaS e reduz jobs próprios de criação de
+cobranças.
+
+A Init continua sendo dona de:
+- contrato;
+- status comercial;
+- valor contratado;
+- próxima cobrança;
+- tolerância;
+- suspensão;
+- auditoria.
+
+O Asaas fica responsável por:
+- gerar cobranças;
+- disponibilizar meios de pagamento;
+- informar eventos por webhook.
+
+IMPORTANTE
+
+Criar a assinatura no Asaas NÃO significa que houve pagamento.
+
+O pagamento só será considerado confirmado quando o webhook de
+cobrança for processado em uma etapa posterior.
+
+BILLING TYPE
+
+Nesta primeira homologação:
+
+UNDEFINED
+
+Isso permite trabalhar com a Fatura do Asaas sem decidir agora que
+todo cliente obrigatoriamente usará PIX, boleto ou cartão.
+
+PERIODICIDADE
+
+Init              Asaas
+MENSAL          -> MONTHLY
+TRIMESTRAL      -> QUARTERLY
+SEMESTRAL       -> SEMIANNUALLY
+ANUAL           -> YEARLY
+
+MIGRATION
+
+database/migrations/013_assinatura_gateway_assinaturas.sql
+
+A nova tabela diferencia:
+
+SANDBOX
+e
+PRODUCTION
+
+Por isso ela é preferida ao campo legado
+assinaturas.gateway_subscription_id, que não possui ambiente.
+
+Os campos antigos NÃO são removidos agora.
+
+IDEMPOTÊNCIA
+
+Fluxo:
+
+1. verifica vínculo local;
+2. busca no Asaas por externalReference;
+3. só cria se não encontrar;
+4. persiste o ID remoto;
+5. advisory lock por assinatura.
+
+externalReference:
+
+init_assinatura_<ID>
+
+Exemplo:
+
+init_assinatura_2
+
+Se a chamada ao Asaas criar a assinatura mas houver falha antes do
+INSERT local, uma nova execução recupera a assinatura remota pelo
+externalReference em vez de criar outra.
+
+ARQUIVOS
+
+app/Contracts/PaymentGatewayInterface.php
+
+app/Integrations/Payments/
+├── PaymentGatewayException.php
+├── PaymentGatewayFactory.php
+└── Asaas/
+    └── AsaasGateway.php
+
+app/Repositories/
+├── AssinaturaGatewayRepository.php
+└── IntegrationAuditLogRepository.php
+
+app/Services/
+└── AssinaturaGatewayService.php
+
+database/migrations/
+└── 013_assinatura_gateway_assinaturas.sql
+
+bin/
+└── vincular-assinatura-asaas.php
+
+PRÉ-REQUISITOS
+
+- migration 012 concluída;
+- empresa vinculada ao customer Asaas;
+- assinatura local ATIVA;
+- moeda BRL;
+- próxima cobrança não vencida;
+- periodicidade suportada;
+- Asaas Sandbox configurado no .env.
+
+PASSO 1
+
+Execute migration 013.
+
+PASSO 2
+
+Valide:
+
+php -l app\Contracts\PaymentGatewayInterface.php
+php -l app\Integrations\Payments\PaymentGatewayException.php
+php -l app\Integrations\Payments\PaymentGatewayFactory.php
+php -l app\Integrations\Payments\Asaas\AsaasGateway.php
+php -l app\Repositories\AssinaturaGatewayRepository.php
+php -l app\Repositories\IntegrationAuditLogRepository.php
+php -l app\Services\AssinaturaGatewayService.php
+php -l bin\vincular-assinatura-asaas.php
+
+PASSO 3
+
+Use o ID da assinatura que pertence à empresa já vinculada.
+
+No cenário atual, se a assinatura da CONQUISTA CONTABILIDADE for
+a assinatura ID 2:
+
+php bin\vincular-assinatura-asaas.php 2
+
+NÃO presuma o ID. Confira a listagem/banco antes se necessário.
+
+RESULTADO ESPERADO
+
+{
+    "ok": true,
+    "assinatura_id": 2,
+    "provider": "ASAAS",
+    "environment": "SANDBOX",
+    "gateway_subscription_id": "sub_...",
+    "billing_type": "UNDEFINED",
+    "cycle": "MONTHLY",
+    "cobrancas_geradas": 1,
+    "origem": "CRIADA"
+}
+
+O número de cobranças geradas é retornado pela API logo após a
+criação. Dependendo do comportamento do Sandbox, confirme também
+pela interface do Asaas.
+
+SEGUNDO TESTE
+
+Execute novamente o mesmo comando.
+
+Esperado:
+
+"origem": "JA_VINCULADA"
+
+Nenhuma segunda assinatura remota deve ser criada.
+
+NO ASAAS
+
+Confira:
+- Cobranças / Assinaturas;
+- cliente correto;
+- valor correto;
+- periodicidade;
+- data da primeira cobrança;
+- somente uma assinatura recorrente.
+
+SEGURANÇA FINANCEIRA
+
+O valor:
+- vem do banco;
+- não vem do terminal/browser;
+- continua NUMERIC no PostgreSQL;
+- não sofre cálculo em float.
+
+Há uma conversão para número JSON somente na fronteira HTTP porque
+a API Asaas exige o campo value como number.
+
+AUDITORIA
+
+Evento:
+
+ASSINATURA_GATEWAY_VINCULADA
+
+O log não grava:
+- API key;
+- CNPJ;
+- e-mail;
+- telefone;
+- corpo integral da API.
+
+PRÓXIMA ETAPA
+
+ETAPA 029
+WEBHOOK ASAAS
+
+Asaas cria/atualiza cobrança
+        ↓
+Webhook autenticado
+        ↓
+idempotência por evento/payment
+        ↓
+assinatura_pagamentos
+        ↓
+ultimo_pagamento_em
+        ↓
+proxima_cobranca_em
+        ↓
+Financeiro atualizado automaticamente
+
+O botão manual Registrar pagamento permanecerá como fallback
+administrativo, não como fluxo principal.

@@ -7,6 +7,7 @@ use App\Controllers\AssinaturaController;
 use App\Controllers\ClienteController;
 use App\Controllers\DocumentoContratualController;
 use App\Controllers\EmpresaResponsavelController;
+use App\Controllers\FinanceiroController;
 use App\Controllers\HomeController;
 use App\Controllers\PlanoController;
 use App\Controllers\PlanoLimiteController;
@@ -403,6 +404,34 @@ $router->post(
     [
         PlanoLimiteController::class,
         'destroy',
+    ],
+    [
+        AuthMiddleware::class,
+
+        new RoleMiddleware([
+            'SUPER_ADMIN',
+        ]),
+    ]
+);
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| Financeiro
+|--------------------------------------------------------------------------
+|
+| Primeira versão somente leitura.
+| Nenhuma alteração financeira é executada por GET.
+|
+*/
+
+$router->get(
+    '/financeiro',
+    [
+        FinanceiroController::class,
+        'index',
     ],
     [
         AuthMiddleware::class,

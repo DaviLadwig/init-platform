@@ -1,0 +1,144 @@
+INIT SAAS PLATFORM
+ETAPA 023 - INTERFACE DO FINANCEIRO
+
+OBJETIVO
+
+Criar a primeira interface financeira da Init SaaS Platform usando
+exclusivamente o backend já validado na Etapa 021.
+
+A página é SOMENTE LEITURA.
+
+ARQUIVOS
+
+app/Controllers/FinanceiroController.php
+views/financeiro/index.php
+public/css/financeiro.css
+routes/web.php
+views/layouts/main.php
+
+NÃO HÁ MIGRATION.
+
+ROTA
+
+GET /financeiro
+
+Proteções:
+- AuthMiddleware
+- RoleMiddleware SUPER_ADMIN
+
+O GET não altera:
+- pagamentos;
+- assinaturas;
+- status;
+- próxima cobrança;
+- valores;
+- planos.
+
+MENU
+
+Foi criada uma seção própria:
+
+FINANCEIRO
+└── Financeiro
+
+Ela fica entre:
+- Comercial
+- Operações
+
+Não foi alterado o estado dos menus:
+- Assinaturas continua ativo;
+- Tenants continua desabilitado;
+- Logs continua desabilitado.
+
+CONTEÚDO DA TELA
+
+Caixa:
+- Recebido no mês
+- A receber no mês
+- Vencido
+
+Recorrência:
+- MRR ativo
+- MRR em risco
+- MRR contratado
+- ARR ativo
+- Ticket médio
+- Inadimplência
+- Clientes ativos
+
+Detalhamento:
+- Receita recorrente por produto
+- Receita recorrente por plano
+
+Previsão:
+- cobranças projetadas por mês por até 12 meses
+
+DINHEIRO
+
+Os cálculos continuam vindo do PostgreSQL como NUMERIC.
+
+A view apenas formata strings decimais para exibição em pt-BR.
+Nenhuma regra financeira é recalculada com float na interface.
+
+VISUAL
+
+A primeira versão foi mantida sem gráficos.
+
+Motivo:
+primeiro validamos:
+- valores;
+- hierarquia;
+- leitura;
+- responsividade.
+
+Depois, se fizer sentido, podemos adicionar gráficos discretos sem
+alterar FinanceiroRepository/FinanceiroService.
+
+VALIDAÇÃO PHP
+
+php -l app\Controllers\FinanceiroController.php
+php -l views\financeiro\index.php
+php -l routes\web.php
+php -l views\layouts\main.php
+
+TESTE FUNCIONAL
+
+1. Acesse:
+   http://localhost/init-platform/public/financeiro
+
+2. Com o cenário validado anteriormente, os números devem ser
+   compatíveis com:
+
+   Recebido no mês: R$ 219,00
+   A receber:        R$ 199,00
+   Vencido:          R$ 0,00
+   MRR ativo:        R$ 418,00
+   MRR em risco:     R$ 0,00
+   MRR contratado:   R$ 418,00
+   ARR ativo:        R$ 5.016,00
+   Ticket médio:     R$ 209,00
+   Clientes ativos:  2
+   Inadimplência:    0,00%
+
+3. Confira também:
+   - Init RH e Init Clinic em Receita por produto;
+   - os planos correspondentes;
+   - previsão de cobranças futuras.
+
+PRÓXIMO PASSO
+
+Depois da validação visual:
+
+Etapa 024
+- arquitetura de gateway
+- PaymentGatewayInterface
+- AsaasGateway
+- configuração segura em .env
+- Sandbox Asaas
+
+Depois:
+- criação de cobrança
+- vínculo interno com assinatura
+- webhook autenticado
+- idempotência
+- pagamento automático

@@ -1,0 +1,2 @@
+CRON_TZ=America/Fortaleza
+* * * * * cd /var/www/init-platform && /usr/bin/php bin/processar-webhooks-asaas.php >> storage/logs/webhooks-asaas.log 2>&1

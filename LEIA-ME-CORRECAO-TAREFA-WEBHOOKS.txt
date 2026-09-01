@@ -1,0 +1,49 @@
+INIT SAAS PLATFORM
+CORREÇÃO - TAREFA AGENDADA DOS WEBHOOKS ASAAS
+
+CAUSA DO ERRO
+
+A versão anterior utilizava:
+
+-RepetitionDuration ([TimeSpan]::MaxValue)
+
+Isso vira uma duração XML fora do intervalo aceito pelo Agendador
+de Tarefas do Windows, como:
+
+Duration:P99999999DT23H59M59S
+
+CORREÇÃO
+
+A tarefa passa a ser criada pelo utilitário nativo schtasks.exe:
+
+/SC MINUTE
+/MO 1
+
+Assim o processador roda a cada 1 minuto sem uma duração artificialmente
+"infinita".
+
+ARQUIVO ALTERADO
+
+scripts\windows\instalar-tarefa-webhooks-asaas.ps1
+
+NÃO HÁ MIGRATION.
+NÃO HÁ ALTERAÇÃO NO WEBHOOK.
+NÃO HÁ ALTERAÇÃO NO PROCESSAMENTO FINANCEIRO.
+
+EXECUÇÃO
+
+cd C:\xampp\htdocs\init-platform
+
+powershell -ExecutionPolicy Bypass -File .\scripts\windows\instalar-tarefa-webhooks-asaas.ps1
+
+VALIDAÇÃO
+
+Get-ScheduledTask -TaskName "Init SaaS - Webhooks Asaas"
+
+Opcionalmente:
+
+Get-ScheduledTaskInfo -TaskName "Init SaaS - Webhooks Asaas"
+
+LOG
+
+storage\logs\webhooks-asaas.log

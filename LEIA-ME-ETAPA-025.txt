@@ -1,0 +1,30 @@
+INIT SAAS PLATFORM
+ETAPA 025 - MELHORIA DO SCROLLBAR DA SIDEBAR
+
+ALTERAÇÃO
+
+Foi removida a aparência nativa larga/clara do scrollbar do Windows
+na navegação lateral.
+
+Agora:
+- largura de 8px;
+- trilho transparente;
+- thumb escuro integrado ao sidebar;
+- hover discreto;
+- sem botões/setas no topo e rodapé;
+- scrollbar-gutter estável para evitar mudança de largura.
+
+ARQUIVO ALTERADO
+
+public/css/app.css
+
+NÃO HÁ MIGRATION.
+NÃO HÁ ALTERAÇÃO DE PHP OU JAVASCRIPT.
+
+TESTE
+
+1. Substitua public/css/app.css.
+2. Faça Ctrl + F5.
+3. Role o menu lateral.
+
+O scrollbar deve ficar estreito, escuro e sem as setas brancas nativas.

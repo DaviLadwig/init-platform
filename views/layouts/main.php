@@ -332,6 +332,40 @@ $userInitial = mb_strtoupper(
                 </div>
 
 
+                <!-- FINANCEIRO -->
+
+                <div class="navigation-section">
+
+                    <span class="navigation-label">
+                        Financeiro
+                    </span>
+
+                    <a
+                        href="<?= $url('/financeiro') ?>"
+                        class="<?= $e(
+                            $navClass('financeiro')
+                        ) ?>">
+
+                        <span class="navigation-icon">
+
+                            <svg
+                                viewBox="0 0 24 24"
+                                aria-hidden="true">
+                                <path
+                                    d="M4 4h16v16H4V4Zm2 2v12h12V6H6Zm2 9h2v2H8v-2Zm3-4h2v6h-2v-6Zm3-3h2v9h-2V8Z" />
+                            </svg>
+
+                        </span>
+
+                        <span>
+                            Financeiro
+                        </span>
+
+                    </a>
+
+                </div>
+
+
                 <!-- OPERAÇÕES -->
 
                 <div class="navigation-section">

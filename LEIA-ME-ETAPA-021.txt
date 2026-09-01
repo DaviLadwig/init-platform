@@ -1,0 +1,67 @@
+INIT SAAS PLATFORM
+ETAPA 021 - BACKEND DO FINANCEIRO
+
+Objetivo:
+criar a camada automática de leitura financeira.
+
+Fonte:
+- public.assinaturas
+- public.assinatura_pagamentos
+- public.produtos
+- public.planos
+
+Não há migration.
+
+Arquivos:
+- app/Repositories/FinanceiroRepository.php
+- app/Services/FinanceiroService.php
+- bin/testar-financeiro.php
+
+Indicadores:
+- recebido no mês
+- a receber no mês
+- vencido
+- MRR ativo
+- MRR em risco
+- MRR contratado
+- ARR ativo
+- ticket médio
+- clientes ativos
+- clientes inadimplentes
+- percentual de inadimplência
+- MRR por produto
+- MRR por plano
+- previsão de caixa de 12 meses
+
+Regras de MRR:
+MENSAL      valor / 1
+TRIMESTRAL  valor / 3
+SEMESTRAL   valor / 6
+ANUAL       valor / 12
+
+Importante:
+- PostgreSQL calcula com NUMERIC.
+- PHP recebe dinheiro como string decimal.
+- Não usamos float para cálculo financeiro.
+- Esta etapa é somente leitura.
+
+Validação:
+php -l app\Repositories\FinanceiroRepository.php
+php -l app\Services\FinanceiroService.php
+php -l bin\testar-financeiro.php
+
+Teste:
+php bin\testar-financeiro.php
+
+Próxima etapa:
+- FinanceiroController
+- rota /financeiro
+- view financeiro/index.php
+- financeiro.css
+- item Financeiro no menu
+
+Depois:
+- PaymentGatewayInterface
+- AsaasGateway
+- Sandbox Asaas
+- webhook automático

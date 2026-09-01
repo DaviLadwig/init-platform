@@ -1,0 +1,91 @@
+INIT SAAS PLATFORM
+ETAPA 029 - CORREÇÃO DO PROCESSAMENTO DO WEBHOOK ASAAS
+
+CAUSA IDENTIFICADA
+
+O evento chegou corretamente:
+
+- PAYMENT_RECEIVED
+- HTTP 200
+- status PENDENTE
+
+A falha ocorreu somente durante o processamento financeiro.
+
+No método createGatewayPayment(), o placeholder nomeado:
+
+:payment_date
+
+era utilizado duas vezes na mesma instrução SQL:
+
+WHEN :payment_date IS NULL
+...
+CAST(:payment_date AS date)
+
+Em prepared statements nativos do PDO PostgreSQL, a reutilização do
+mesmo placeholder nomeado pode causar falha de parâmetros em runtime.
+
+CORREÇÃO
+
+O SQL agora utiliza :payment_date apenas uma vez:
+
+COALESCE(
+    CAST(:payment_date AS date)::timestamptz,
+    NOW()
+)
+
+Nenhuma regra financeira foi alterada.
+
+ARQUIVO ALTERADO
+
+app/Repositories/AsaasWebhookRepository.php
+
+NÃO HÁ MIGRATION.
+
+VALIDAÇÃO
+
+php -l app\Repositories\AsaasWebhookRepository.php
+
+REPROCESSAR O EVENTO DE TESTE
+
+O evento atual ficou:
+
+status = ERRO
+resultado_codigo = ERRO_BANCO
+
+Como o processador busca apenas PENDENTE, para este teste específico
+retorne somente o evento ID 1 para PENDENTE:
+
+UPDATE public.gateway_webhook_eventos
+SET
+    status = 'PENDENTE',
+    resultado_codigo = NULL,
+    processado_em = NULL,
+    atualizado_em = NOW()
+WHERE id = 1
+  AND status = 'ERRO'
+  AND resultado_codigo = 'ERRO_BANCO';
+
+Depois execute:
+
+php bin\processar-webhooks-asaas.php
+
+Não confirme a cobrança novamente no Asaas.
+
+RESULTADO ESPERADO
+
+encontrados = 1
+processados = 1
+duplicados = 0
+erros = 0
+
+Depois confira:
+- gateway_webhook_eventos
+- assinatura_pagamentos
+- assinaturas
+
+OBSERVAÇÃO
+
+A tentativa permaneceu 0 porque markProcessing() ocorreu dentro da
+transação que foi revertida após o erro. Em seguida, apenas o estado
+ERRO foi persistido em uma operação separada. Isso é coerente com o
+desenho atual.
